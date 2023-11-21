@@ -11,17 +11,22 @@ type RightContentProps = {
   user?: User| null;
 };
 
+
+// ...
+
 const RightContent: React.FC<RightContentProps> = ({user}) => {
+  const handleSignOut = () => {
+    signOut(auth).catch((error) => {
+      // An error happened.
+    });
+  };
+
   return (
     <>
-    <Flex justify='center' align='center'>
-      {user ? <Icons/> : <AuthButtons />}
-      <UserMenu user={user}/>
-
-
-    </Flex>
-
-        </>
+      <Flex justify='center' align='center'>
+        {user ? <>{user.email} <Button onClick={handleSignOut}>Logout</Button></> : <AuthButtons />}
+      </Flex>
+    </>
   );
 };
 
