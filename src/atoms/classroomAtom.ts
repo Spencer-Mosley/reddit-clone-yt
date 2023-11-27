@@ -10,5 +10,6 @@ export interface Classroom {
     userEmailAddress: string[];
     users: string[];
     userTokens: string[];
+    createdBy: string;
 }
 

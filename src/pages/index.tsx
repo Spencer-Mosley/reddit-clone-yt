@@ -27,6 +27,9 @@ import usePosts from "../hooks/usePosts";
 import Premium from "../components/Community/Premium";
 import PersonalHome from "../components/Community/PersonalHome";
 
+import React, { useState,  useContext } from 'react';
+import { Link } from 'react-router-dom';
+
 const Home: NextPage = () => {
   return <div>Home</div>;
 };
