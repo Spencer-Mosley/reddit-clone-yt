@@ -3,23 +3,30 @@ import Navbar from '../Navbar/Navbar';
 import { Box, Tab, TabList, TabPanel, TabPanels, Tabs, Text } from "@chakra-ui/react";
 
 
+import { useNavigate } from 'react-router-dom';
+import Link from 'next/link';
+
+
+
 
 interface LayoutProps {
   children: ReactNode;
 }
 
 const Layout : React.FC<LayoutProps> = ({ children }) => {
+
+
     return (
         <>
         <Navbar />
         <Box display="flex">
           <Tabs orientation="vertical" variant="soft-rounded" colorScheme="green">
             <TabList>
-              <Tab>Dashbaord</Tab>
-              <Tab>Users</Tab>
-              <Tab>Classes</Tab>
-              <Tab>Posts</Tab>
-              <Tab>Comments</Tab>
+            <Tab><Link href="/">Dashboard</Link></Tab>
+              <Tab><Link href="/users">Users</Link></Tab>
+              <Tab><Link href="/classrooms">Classes</Link></Tab>
+              <Tab><Link href="/posts">Posts</Link></Tab>
+              <Tab><Link href="/comments">Comments</Link></Tab>
             </TabList>
             <TabPanels>
               <TabPanel>
