@@ -11,5 +11,6 @@ export interface Classroom {
     users: string[];
     userTokens: string[];
     createdBy: string;
+    dateAdded: string;
 }
 
