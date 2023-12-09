@@ -30,8 +30,8 @@ import { firestore } from 'src/firebase/devclientApp';
 const Home: NextPage = () => {
   const [users, setUsers] = useState<{ id: string; }[] | null>(null);
   const [classrooms, setClassrooms] = useState<{ id: string; }[] | null>(null);
-  const [posts, setPosts] = useState(null);
-  const [comments, setComments] = useState(null);
+  const [posts, setPosts] = useState<{ id: string; }[] | null>(null);
+  const [comments, setComments] = useState<{ id: string; }[] | null>(null);
   const [userStatsCounts, setUserStatsCounts] = useState([]);
   const [classesStatsCounts, setClassesStatsCounts] = useState([]);
   const [postsStatsCounts, setPostsStatsCounts] = useState([]);
@@ -41,18 +41,18 @@ const Home: NextPage = () => {
   const [tenantDetail, setTenantDetail] = useState(null);
 
 
-  const tenantID = "yourTenantId"; // Replace with actual tenant ID
+  const tenantID = "e7vYCIfqtPfiqx0Wr5vHHBnrmhy1"; // Replace with actual tenant ID
 
 
 
   const fetchUsers = async () => {
     try {
       let q;
-      //if (tenantID) {
-        //q = query(collection(firestore, "users"), where('tenantId', '==', tenantID));
-      //} else {
+      if (tenantID) {
+        q = query(collection(firestore, "users"), where('tenantId', '==', tenantID));
+      } else {
         q = query(collection(firestore, "users"));
-      //}
+      }
       const querySnapshot = await getDocs(q);
       const userData = querySnapshot.docs.map(doc => ({
         id: doc.id,
@@ -69,11 +69,11 @@ const Home: NextPage = () => {
   const fetchClassrooms = async () => {
     try {
       let q;
-      //if (tenantID) {
-        //q = query(collection(firestore, "users"), where('tenantId', '==', tenantID));
-      //} else {
-        q = query(collection(firestore, "classrooms"));
-      //}
+      if (tenantID) {
+        q = query(collection(firestore, "threads"), where('tenantId', '==', tenantID));
+      } else {
+        q = query(collection(firestore, "threads"));
+      }
       const querySnapshot = await getDocs(q);
       const classroomData = querySnapshot.docs.map(doc => ({
         id: doc.id,
@@ -87,10 +87,44 @@ const Home: NextPage = () => {
     }
   };
 
+  const fetchPosts = async () => {
+    try {
+      const q = query(collection(firestore, "posts"));
+      const querySnapshot = await getDocs(q);
+      const postData = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setPosts(postData);
+      console.log('postData', postData);
+    } catch (error) {
+      console.error('Error fetching posts:', error);
+      // Handle error appropriately
+    }
+  };
+  
+  const fetchComments = async () => {
+    try {
+      const q = query(collection(firestore, "comments"));
+      const querySnapshot = await getDocs(q);
+      const commentData = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setComments(commentData);
+      console.log('commentData', commentData);
+    } catch (error) {
+      console.error('Error fetching comments:', error);
+      // Handle error appropriately
+    }
+  };
+  
   useEffect(() => {
     fetchUsers();
     fetchClassrooms();
-  }, []); 
+    fetchPosts();
+    fetchComments();
+  }, []);
 
 
 
@@ -117,11 +151,11 @@ const Home: NextPage = () => {
         <div className="col-md-6 col-lg-3 counts-wrapper cursor-pointer">
             <div className="counts-inner-wrapper">
               <div>
-                <p className="number">
-                  classes: 123 {/* Hardcoded number for users */}
-                  {/* Conditional rendering for loading spinner */}
-                </p>
-                <p className="desc">USERS : 100+ {users?.length}</p>
+
+                <p className="desc">USERS count:  {users?.length}</p>
+                <p className="desc">Classrooms count:  {classrooms?.length}</p>
+                <p className="desc">Posts :  {posts?.length}</p>
+                <p className="desc">Comments :  {comments?.length}</p>
               </div>
               {/* SVG or icon here */}
             </div>
@@ -158,7 +192,6 @@ const Home: NextPage = () => {
                     
                   </div>
                 </div>
-                <div className="col-md-1 text-center">50 {/* Hardcoded totalCount */}</div>
               </div>
               {/* Similar structure for Classes, Posts, Comments sections */}
             </div>

@@ -131,7 +131,7 @@ useEffect(() => {
   const getPosts = async () => {
     try {
       const postsCollectionRef = collection(firestore, 'posts');
-      const q = query(postsCollectionRef, where("classroomId", "==", classroomData.id));
+      const q = query(postsCollectionRef, where("threadId", "==", classroomData.id));
 
       const querySnapshot = await getDocs(q);
      // const posts = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -349,7 +349,7 @@ const getUser = async (id: string) => {
   
 export async function getServerSideProps(context: GetServerSidePropsContext) {
     try {
-        const classroomDocRef = doc(firestore, "classrooms", context.query.classroom as string);
+        const classroomDocRef = doc(firestore, "threads", context.query.classroom as string);
         const classroomDocSnap = await getDoc(classroomDocRef);
 
         //print this context.query.classroom

@@ -3,8 +3,17 @@ import { Classroom } from "../../atoms/classroomAtom";
 import { getDocs, collection, query } from "firebase/firestore";
 import { firestore } from "../../firebase/devclientApp";
 import { Flex, Box, Heading, Text, Table, Thead, Tbody, Tr, Th, Td, Button } from '@chakra-ui/react';
+import Link from 'next/link';
+
 
 type ClassroomsPageProps = {};
+
+type User = {
+  email: string;
+  // other properties...
+};
+
+
 
 const ClassroomsPage: React.FC<ClassroomsPageProps> = () => {
   const [allClassrooms, setAllClassrooms] = useState<Classroom[]>([]);
@@ -46,8 +55,9 @@ const ClassroomsPage: React.FC<ClassroomsPageProps> = () => {
           <Thead>
             <Tr>
               <Th>Title</Th>
-              <Th>Users</Th>
               <Th>Date Added</Th>
+              <Th>User count</Th>
+              <Th>move this to the details page</Th>
               <Th>Actions</Th>
             </Tr>
           </Thead>
@@ -56,10 +66,13 @@ const ClassroomsPage: React.FC<ClassroomsPageProps> = () => {
               <Tr key={classroom.id}>
                 <Td>{classroom.title}</Td>
                 <Td>{classroom.dateAdded}</Td>
-                <Td>{JSON.stringify(classroom.users)}</Td>
-                <Td>
-                  <Button colorScheme="blue">Edit</Button>
-                  <Button colorScheme="red" ml="2">Delete</Button>
+                <Td>{classroom.users.length}</Td>
+
+                <Td>{classroom.users.map(user => user.email).join(", ")}</Td>                <Td>
+                <Link href={`/classrooms/${classroom.id}`}>
+  <Button colorScheme="blue">Details</Button>
+</Link>
+                  <Button colorScheme="red" ml="2">Deactivate</Button>
                 </Td>
               </Tr>
             ))}
