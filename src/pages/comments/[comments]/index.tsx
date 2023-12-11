@@ -48,7 +48,7 @@ type CommentPageProps = {
     commentData: Comment;
 };
 
-const CommentPage: React.FC<CommentPageProps> = ({ commentData }) => {
+const CommentPage: React.FC<CommentPageProps> = ({ commentData, postName, threadName }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedInfo, setSelectedInfo] = useState(null);
     const [modalConfirmationType, setModalConfirmationType] = useState('');
@@ -160,36 +160,45 @@ const CommentPage: React.FC<CommentPageProps> = ({ commentData }) => {
     //}
 
     return (
-        
-        <Table variant="simple">
-  <Tbody>
-    <Tr>
-      <Th>ID</Th>
-      <Td>{commentData.id}</Td>
-    </Tr>
-    <Tr>
-      <Th>Text</Th>
-      <Td>{commentData.commentText}</Td>
-    </Tr>
-    <Tr>
-      <Th>Sent By</Th>
-      <Td>{commentData.senderEmail}</Td>
-    </Tr>
-    <Tr>
-      <Th>Classroom Name</Th>
-      <Td>{commentData.threadId}</Td>
-    </Tr>
-    <Tr>
-      <Th>Post Name</Th>
-      <Td>{commentData.postId}</Td>
-    </Tr>
-    <Tr>
-      <Th>Date Sent</Th>
-      <Td>{moment(commentData.dateSent).format('YYYY-MM-DD HH:mm')}</Td>
-    </Tr>
-  </Tbody>
-</Table>
-    );
+        <>
+          <Flex mb="4" align="center">
+            <Box flex="1">
+              <Heading as="h1" size="lg">Comment Details</Heading>
+            </Box>
+          </Flex>
+      
+          <Box borderWidth="1px" borderRadius="lg" overflowX="auto">
+            <Table variant="simple">
+              <Tbody>
+                <Tr>
+                  <Th>ID</Th>
+                  <Td>{commentData.id}</Td>
+                </Tr>
+                <Tr>
+                  <Th>Text</Th>
+                  <Td>{commentData.commentText}</Td>
+                </Tr>
+                <Tr>
+                  <Th>Sent By</Th>
+                  <Td>{commentData.senderEmail}</Td>
+                </Tr>
+                <Tr>
+                  <Th>Classroom Name</Th>
+                  <Td>{threadName}</Td>
+                </Tr>
+                <Tr>
+                  <Th>Post Name</Th>
+                  <Td>{postName}</Td>
+                </Tr>
+                <Tr>
+                  <Th>Date Sent</Th>
+                  <Td>{moment(commentData.dateSent).format('YYYY-MM-DD HH:mm')}</Td>
+                </Tr>
+              </Tbody>
+            </Table>
+          </Box>
+        </>
+      );
 };
 
 export async function getServerSideProps(context: GetServerSidePropsContext) {
@@ -213,26 +222,54 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
 
         if (!commentData) {
             console.log("No comment found for ID:");
-            //return { props: {} };
+            return { props: {} };
         }
 
+        if(commentData){
+            //const classroomDocRef = doc(firestore, "threads", commentData.threadId);
+            console.log("threadId", commentData.threadId);
+            const classroomDocRef = doc(firestore, "threads", "KoIlqQ62S534iFrEJ7ek");
+        const classroomDocSnap = await getDoc(classroomDocRef);
+            const classroomData = classroomDocSnap.data();
+            const classroomName = classroomData?.title;
+            console.log("Fetching classroom with ID:", classroomData?.title);  
 
-        console.log("Fetched comment data:", commentData);
+
+
+            console.log("postthreadId", commentData.postdId);           
+             const postDocRef = doc(firestore, "posts", commentData.postId);
+             const postDocSnap = await getDoc(postDocRef);
+             const postData = postDocSnap.data();
+                const postName = postData?.postName;
+            console.log("Fetching post with ID:", postData?.postName);
+
+
+            console.log("Fetched comment data:", commentData);
 
         
         
-        if (commentData?.timestamp) {
-            commentData.timestamp = commentData.timestamp.toMillis();
-        }
-
-        return {
-            props: {
-                commentData: {
-                    ...commentData,
-                    id: commentDocSnap.id
-                }
+            if (commentData?.timestamp) {
+                commentData.timestamp = commentData.timestamp.toMillis();
             }
-        };
+    
+            return {
+                props: {
+                  commentData: {
+                    ...commentData,
+                    id: commentDocSnap.id,
+                  },
+                  postName: postData?.postName,
+                  threadName: classroomData?.title,
+                },
+              };
+
+
+
+
+        }
+
+
+  
     } catch (error) {
         console.error("Error in getServerSideProps:", error);
         return { props: {} };
