@@ -10,6 +10,8 @@ import {
   query,
   QuerySnapshot,
   where,
+  doc,
+  getDoc
 } from "firebase/firestore";
 import type { NextPage } from "next";
 import { useRouter } from "next/router";
@@ -21,8 +23,16 @@ import React, { useState,  useContext } from 'react';
 //import { Link } from 'react-router-dom';
 
 import { firestore } from 'src/firebase/devclientApp';
+import { auth } from 'src/firebase/devclientApp';
+
+import { Box, Text, Flex, Progress, VStack, Heading } from '@chakra-ui/react';
+import { cp } from "fs";
 
 
+interface TenantAdminData {
+  id: string;
+  tenants?: string[];  // Assuming tenants is an optional array of strings
+}
 
 
 
@@ -31,6 +41,8 @@ const Home: NextPage = () => {
   const [users, setUsers] = useState<{ id: string; }[] | null>(null);
   const [classrooms, setClassrooms] = useState<{ id: string; }[] | null>(null);
   const [posts, setPosts] = useState<{ id: string; }[] | null>(null);
+  const [tenants, setTenants] = useState<{ id: string; }[] | null>(null);
+
   const [comments, setComments] = useState<{ id: string; }[] | null>(null);
   const [userStatsCounts, setUserStatsCounts] = useState([]);
   const [classesStatsCounts, setClassesStatsCounts] = useState([]);
@@ -41,15 +53,47 @@ const Home: NextPage = () => {
   const [tenantDetail, setTenantDetail] = useState(null);
 
 
-  const tenantID = "e7vYCIfqtPfiqx0Wr5vHHBnrmhy1"; // Replace with actual tenant ID
 
+
+
+  const [tenant, setTenant] =  useState([]);
+  const [user] = useAuthState(auth);
+
+
+  const fetchTenantAdminList = async () => {
+    try {
+      // Get the currently logged-in user  
+      if (!user) {
+        console.log('No user logged in');
+        return;
+      }
+
+      console.log('User:', user.uid);
+  
+      // Get the document from TenantAdmins collection with the ID of the logged-in user
+      const tenantAdminRef = doc(firestore, "tenantAdmins", user.uid);
+      const docSnapshot = await getDoc(tenantAdminRef);
+  
+      if (docSnapshot.exists()) {
+        const tenantAdminData = { id: docSnapshot.id, ...docSnapshot.data() };
+        console.log('Tenant Admin data:', tenantAdminData);
+        console.log('Tenant ID:', tenant);
+        setTenant(tenantAdminData.tenants[0]);
+      } else {
+        console.log('No matching tenant admin document found');
+      }
+    } catch (error) {
+      console.error('Error fetching tenant admin data:', error);
+    }
+  };
 
 
   const fetchUsers = async () => {
     try {
       let q;
-      if (tenantID) {
-        q = query(collection(firestore, "users"), where('tenantId', '==', tenantID));
+      if (tenant) {
+        console.log('fetch userstenantID', tenant);
+        q = query(collection(firestore, "users"), where('tenantId', '==', tenant));
       } else {
         q = query(collection(firestore, "users"));
       }
@@ -69,10 +113,10 @@ const Home: NextPage = () => {
   const fetchClassrooms = async () => {
     try {
       let q;
-      if (tenantID) {
-        q = query(collection(firestore, "threads"), where('tenantId', '==', tenantID));
+      if (tenant) {
+        q = query(collection(firestore, "classrooms"), where('tenantId', '==', tenant));
       } else {
-        q = query(collection(firestore, "threads"));
+        q = query(collection(firestore, "classrooms"));
       }
       const querySnapshot = await getDocs(q);
       const classroomData = querySnapshot.docs.map(doc => ({
@@ -89,7 +133,12 @@ const Home: NextPage = () => {
 
   const fetchPosts = async () => {
     try {
-      const q = query(collection(firestore, "posts"));
+
+      let q;
+      if (tenant) {
+        q = query(collection(firestore, "posts"), where('tenantId', '==', tenant));
+      } 
+
       const querySnapshot = await getDocs(q);
       const postData = querySnapshot.docs.map(doc => ({
         id: doc.id,
@@ -105,7 +154,12 @@ const Home: NextPage = () => {
   
   const fetchComments = async () => {
     try {
-      const q = query(collection(firestore, "comments"));
+
+      let q;
+      if (tenant) {
+        q = query(collection(firestore, "comments"), where('tenantId', '==', tenant));
+        console.log('comemnts tennant', tenant);
+      }
       const querySnapshot = await getDocs(q);
       const commentData = querySnapshot.docs.map(doc => ({
         id: doc.id,
@@ -120,11 +174,21 @@ const Home: NextPage = () => {
   };
   
   useEffect(() => {
-    fetchUsers();
-    fetchClassrooms();
-    fetchPosts();
-    fetchComments();
+     fetchTenantAdminList();
+
+
+    //fetchComments();
   }, []);
+
+  useEffect(() => {
+    if (tenant) {
+      // Call other functions here
+      fetchUsers();
+      fetchClassrooms();
+      fetchPosts();
+      fetchComments();
+    }
+  }, [tenant]);
 
 
 
@@ -134,70 +198,82 @@ const Home: NextPage = () => {
 
   return (
     <>
-      <div className="row mb-4 align-items-center">
-        <div className="col-6">
-          <h1 className="m-0">
-            {'commonService.tenantID' && <span>{'tenantDetail?.name'}</span>}
-            Dashboard
-          </h1>
-        </div>
-        <div className="col-6 text-end">
-          {/* Additional elements if needed */}
-        </div>
-      </div>
+      <Flex justifyContent="space-between" mb="4">
+        <Heading as="h1">Dashboard</Heading>
+        {/* Additional elements if needed */}
+      </Flex>
 
-      <div className="row counts-container mb-5">
+      <Flex wrap="wrap" justifyContent="space-between" mb="5">
         {/* User Count Section */}
-        <div className="col-md-6 col-lg-3 counts-wrapper cursor-pointer">
-            <div className="counts-inner-wrapper">
-              <div>
-
-                <p className="desc">USERS count:  {users?.length}</p>
-                <p className="desc">Classrooms count:  {classrooms?.length}</p>
-                <p className="desc">Posts :  {posts?.length}</p>
-                <p className="desc">Comments :  {comments?.length}</p>
-              </div>
-              {/* SVG or icon here */}
-            </div>
-        </div>
+        <Box
+          p="5"
+          boxShadow="base"
+          borderRadius="lg"
+          mb="5"
+          flex="1"
+          minW="250px"
+          maxW="300px"
+          bg="white"
+          textAlign="center"
+        >
+          <Text fontSize="xl" mb="2">USERS</Text>
+          <Text fontSize="3xl">{users?.length}</Text>
+          {/* SVG or icon here */}
+        </Box>
 
         {/* Classes Count Section */}
-        {/* Similar structure as Users section, with link and hardcoded values */}
+        <Box
+          p="5"
+          boxShadow="base"
+          borderRadius="lg"
+          mb="5"
+          flex="1"
+          minW="250px"
+          maxW="300px"
+          bg="white"
+          textAlign="center"
+        >
+          <Text fontSize="xl" mb="2">CLASSES</Text>
+          <Text fontSize="3xl">{classrooms?.length}</Text>
+          {/* SVG or icon here */}
+        </Box>
 
         {/* Posts Count Section */}
-        {/* Similar structure as above sections, with link and hardcoded values */}
+        <Box
+          p="5"
+          boxShadow="base"
+          borderRadius="lg"
+          mb="5"
+          flex="1"
+          minW="250px"
+          maxW="300px"
+          bg="white"
+          textAlign="center"
+        >
+          <Text fontSize="xl" mb="2">POSTS</Text>
+          <Text fontSize="3xl">{posts?.length}</Text>
+          {/* SVG or icon here */}
+        </Box>
 
         {/* Comments Count Section */}
-        {/* Similar structure as above sections, with link and hardcoded values */}
-      </div>
+        <Box
+          p="5"
+          boxShadow="base"
+          borderRadius="lg"
+          mb="5"
+          flex="1"
+          minW="250px"
+          maxW="300px"
+          bg="white"
+          textAlign="center"
+        >
+          <Text fontSize="xl" mb="2">COMMENTS</Text>
+          <Text fontSize="3xl">{comments?.length}</Text>
+          {/* SVG or icon here */}
+        </Box>
+      </Flex>
 
-      <div className="row">
-        <div className="col-md-12 mb-3">
-          <div className="card">
-            <div className="card-header fw-bolder fs-6 d-flex align-items-center justify-content-between">
-              <h3 className="m-0">Statistics</h3>
-              <div>
-                {/* Buttons for filter options */}
-               
-                {/* ... other buttons for 'weekly', 'monthly', 'yearly' */}
-              </div>
-            </div>
-
-            <div className="card-body">
-              {/* User Stats Section */}
-              <div className="row align-items-center">
-                <div className="col-md-2">Users</div>
-                <div className="col-md-9">
-                  <div className="progress" style={{ height: "10px" }}>
-                    
-                  </div>
-                </div>
-              </div>
-              {/* Similar structure for Classes, Posts, Comments sections */}
-            </div>
-          </div>
-        </div>
-      </div>
+      
     </>
   );
 };

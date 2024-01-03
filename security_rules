@@ -1,0 +1,97 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+  
+  function isUserAdmin() {
+  let userDoc = get(/databases/$(database)/documents/users/$(request.auth.uid));
+  return userDoc.data.userType == 'admin';
+}
+
+function getUserEmail(){
+   let userDoc = get(/databases/$(database)/documents/users/$(request.auth.uid));
+   return userDoc.data.email;
+ 
+}
+
+
+
+function isUserInClassroom(classroomId) {
+      let classroomRef = /databases/$(database)/documents/classrooms/$(classroomId);
+      let classroomDoc = get(classroomRef);
+      return exists(classroomRef) && request.auth.uid in classroomDoc.data.users;
+    }
+
+function tenantAdminCheck(tenantId) {
+      // Get the TenantAdmins document for the current user
+      let tenantAdminsDoc = get(/databases/$(database)/documents/TenantAdmins/$(request.auth.uid));
+      
+      // Check if the tenantId is in the tenants list of the TenantAdmins document
+      return tenantId in tenantAdminsDoc.data.tenants;
+    }
+
+match /posts/{postId} {
+  allow read: if isUserInClassroom(resource.data.classroomId) || ( TenantAdmincheck(resource.data.tenantId)  );  
+  allow read: if isUserInClassroom(resource.data.classroomId);
+  allow create: if isUserInClassroom(request.resource.data.classroomId);
+  allow update: if isUserInClassroom(request.resource.data.classroomId)  
+                || isUserAdmin()
+                && request.resource.data.diff(resource.data).affectedKeys().hasAny(['isDeleted', 'commenterTokens']);
+}
+
+    match /comments/{commentId} {
+            allow read: if isUserInClassroom(debug(resource.data.classroomId));
+      allow create:  if isUserInClassroom(request.resource.data.classroomId);
+allow update: if isUserInClassroom(request.resource.data.classroomId) 
+                 || isUserAdmin();  
+    }
+
+match /classrooms/{classroomId} {
+  allow read: if request.auth.uid in resource.data.users; 
+
+
+
+  allow update: if request.auth.uid != null 
+                && 'users' in request.resource.data
+              && 'userTokens' in request.resource.data
+                && 'userEmails' in request.resource.data
+                && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['users', 'userTokens', 'userEmails','classMemberNames'])
+                //&& isAddingOwnEmailOnly()
+                //&& isAddingOwnUidOnly();
+                
+                }
+
+function isAddingOwnEmailOnly() {
+  let userEmail = get(/databases/$(database)/documents/users/$(request.auth.uid)).data.email;
+  let existingEmails = resource.data.userEmails;
+  let updatedEmails = request.resource.data.userEmails;
+  let addedEmails = updatedEmails.difference(existingEmails); // Assuming difference method provides the set difference
+  return addedEmails.size() == 1 && userEmail in addedEmails;
+}
+
+  function isAddingOwnUidOnly() {
+    // UID of the authenticated user
+    let userUid = request.auth.uid;
+
+    // List of UIDs in the current document
+    let existingUids = resource.data.users;
+
+    // List of UIDs in the updated document
+    let updatedUids = request.resource.data.users;
+
+    // Check if the new UID list contains the authenticated user's UID and does not remove any existing UIDs
+    return updatedUids.hasAll(existingUids) && updatedUids.hasOnly([userUid]);
+  }
+
+
+
+
+    match /classmappings/{classmappingsId} {
+      allow get: if request.auth.uid != null; // Adjust this as per your requirements
+    }
+
+match /users/{userId} {
+  allow create: if true; // Allows creation only if the user is authenticated.
+  allow get: if request.auth.uid != null;
+}
+  }
+}

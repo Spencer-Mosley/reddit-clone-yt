@@ -1,15 +1,19 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import {Comment } from "../../atoms/commentAtom";
-import { getDocs, collection, query, limit, startAfter, updateDoc, doc, where  } from "firebase/firestore";
-import { firestore } from "../../firebase/devclientApp";
+import { getDocs, collection, query, limit, startAfter, updateDoc, doc, where, getDoc } from "firebase/firestore";
+import { firestore, auth } from "../../firebase/devclientApp";
 import { Flex, Box, Heading, Text, Table, Thead, Tbody, Tr, Th, Td, Button, Input } from '@chakra-ui/react';
 import Link from 'next/link';
 import ReactPaginate from 'react-paginate';
+import { useAuthState } from "react-firebase-hooks/auth";
 
 
 
 
-type CommentsPageProps = {};
+
+type CommentsPageProps = {
+  filterCondition?: any;
+};
 
 
 type User = {
@@ -19,7 +23,7 @@ type User = {
 
 
 
-const CommentsPage: React.FC<CommentsPageProps> = () => {
+const CommentsPage: React.FC<CommentsPageProps> =  ({ filterCondition }) => {
   const [allComments, setAllComments] = useState<Comment[]>([]);
   const [pageCount, setPageCount] = useState(0);
   const [currentPage, setCurrentPage] = useState(0);
@@ -39,6 +43,42 @@ const CommentsPage: React.FC<CommentsPageProps> = () => {
   
 
 
+  const [tenant, setTenant] =  useState([]);
+  const [user] = useAuthState(auth);
+  //getDoc
+
+
+
+
+
+  const fetchTenantAdminList = async () => {
+    try {
+      // Get the currently logged-in user  
+      if (!user) {
+        console.log('No user logged in');
+        return;
+      }
+
+      console.log('User:', user.uid);
+  
+      // Get the document from TenantAdmins collection with the ID of the logged-in user
+      const tenantAdminRef = doc(firestore, "tenantAdmins", user.uid);
+      const docSnapshot = await getDoc(tenantAdminRef);
+  
+      if (docSnapshot.exists()) {
+        const tenantAdminData = { id: docSnapshot.id, ...docSnapshot.data() };
+        console.log('Tenant Admin data:', tenantAdminData);
+        console.log('Tenant ID:', tenant);
+        setTenant(tenantAdminData.tenants[0]);
+        return tenantAdminData.tenants[0];
+      } else {
+        console.log('No matching tenant admin document found');
+        return null;
+      }
+    } catch (error) {
+      console.error('Error fetching tenant admin data:', error);
+    }
+  };
 
 
   /*const fetchComments = async (page: number) => {
@@ -73,11 +113,30 @@ const CommentsPage: React.FC<CommentsPageProps> = () => {
 
 
 
-  const fetchComments = async () => {
+  const fetchComments = async (tenantId) => {
     setLoading(true);
     try {
+
+
+      if (!tenantId) {
+        console.error('No tenantId provided');
+        throw new Error('Tenant ID is required');
+        // or simply return; to exit the function without an error
+      }
+
+
       const commentCollectionRef = collection(firestore, 'comments');
-      const querySnapshot = await getDocs(commentCollectionRef);
+      let q = query(commentCollectionRef, where('tenantId', '==', tenantId));
+  
+      /*
+      if (filterCondition) {
+        q = query(commentCollectionRef, where(filterCondition.field, filterCondition.operator, filterCondition.value));
+      } else {
+        q = query(commentCollectionRef);
+      }
+      */
+  
+      const querySnapshot = await getDocs(q); // Use the query 'q' here
       const fetchedComments = querySnapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as Comment) }));
       setComments(fetchedComments);
       setFilteredComments(fetchedComments); // Initialize filteredComments with all comments
@@ -87,6 +146,7 @@ const CommentsPage: React.FC<CommentsPageProps> = () => {
       setLoading(false);
     }
   };
+  
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
@@ -111,8 +171,51 @@ const CommentsPage: React.FC<CommentsPageProps> = () => {
 
 
 useEffect(() => {
-  fetchComments();
+  fetchTenantAdminList();
+
+
+ //fetchComments();
 }, []);
+
+
+
+
+
+const setupData = async () => {
+const tenantId = await fetchTenantAdminList();
+if (tenantId) {
+  fetchComments(tenantId);
+}
+};
+
+useEffect(() => {
+setupData();
+}, []); 
+
+/*useEffect(() => {
+  if (tenant) {
+    // Call other functions here
+    console.log('fethcing posts');
+    console.log('Tenant ID:', tenant);
+    fetchPosts(tenant);
+  }
+}, [tenant]);
+*/
+
+useEffect(() => {
+  const setupData = async () => {
+    const tenantId = await fetchTenantAdminList();
+    if (tenantId) {
+      fetchComments(tenantId);
+    }
+  };
+
+  setupData();
+}, []);
+
+
+
+
 
 useEffect(() => {
   const filtered = comments.filter(comment =>
@@ -160,7 +263,7 @@ useEffect(() => {
               <Tr key={comment.id}>
                  <Td>{comment.commentText}</Td>
                 <Td>{comment.postId}</Td>
-                <Td>{comment.threadId}</Td>
+                <Td>{comment.classroomName}</Td>
                 <Td>{comment.senderEmail}</Td>
                 <Td>{comment.dateAdded}</Td>
 

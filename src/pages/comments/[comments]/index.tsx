@@ -32,8 +32,8 @@ type Post = {
     postAddedByName: string;
     postName: string;
     tenantId: string;
-    threadId: string;
-    threadName: string;
+    classroomId: string;
+    classroomName: string;
     total: number;
     updatedDate: string;
     users: Array<{
@@ -67,22 +67,7 @@ const CommentPage: React.FC<CommentPageProps> = ({ commentData, postName, thread
     });
     const [filteredPosts, setFilteredPosts] = useState([]);
 
-    useEffect(() => {
-        console.log("use effect getting comment data");
-        console.log("commentData", commentData);
 
-        const id = "id-20230410230491";
-        console.log("commentData", commentData);
-        if (id) {
-            //getUser(commentData.createdBy);
-        } else {
-            // history.push('/admin/comments');
-        }
-
-        return () => {
-            // Unsubscribe or cleanup logic
-        };
-    }, []);
 
     useEffect(() => {
         const fetchPosts = async () => {
@@ -96,7 +81,7 @@ const CommentPage: React.FC<CommentPageProps> = ({ commentData, postName, thread
     const getPosts = async () => {
         try {
             const postsCollectionRef = collection(firestore, 'comments');
-            const q = query(postsCollectionRef, where("id", "==", "id-20230410230491"));
+            const q = query(postsCollectionRef, where("id", "==", commentData.postId));
             //const q = query(postsCollectionRef);
 
 
@@ -184,7 +169,7 @@ const CommentPage: React.FC<CommentPageProps> = ({ commentData, postName, thread
                 </Tr>
                 <Tr>
                   <Th>Classroom Name</Th>
-                  <Td>{threadName}</Td>
+                  <Td>{commentData.classroomName}</Td>
                 </Tr>
                 <Tr>
                   <Th>Post Name</Th>
@@ -205,12 +190,13 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
     try {
 
        // const commentDocRef = doc(firestore, "comments", context.query.comment as string);
-       console.log("contextt", context);
+       //console.log("contextt", context);
+       console.log("context.querry.comment", context.query.comments);
        const commentDocRef = doc(firestore, "comments", context.query.comments as string);
         const commentDocSnap = await getDoc(commentDocRef);
 
 
-        console.log("Fetching comment with ID:", context.query.comment);
+        console.log("Fetching comment with ID:", context.query.comments as string);
 
        
        
@@ -226,17 +212,16 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
         }
 
         if(commentData){
-            //const classroomDocRef = doc(firestore, "threads", commentData.threadId);
-            console.log("threadId", commentData.threadId);
-            const classroomDocRef = doc(firestore, "threads", "KoIlqQ62S534iFrEJ7ek");
+            console.log("classroomId", commentData.classroomId);
+            const classroomDocRef = doc(firestore, "classrooms", commentData.classroomId);
         const classroomDocSnap = await getDoc(classroomDocRef);
             const classroomData = classroomDocSnap.data();
             const classroomName = classroomData?.title;
+            console.log("Fetching classroom :", classroomData);
             console.log("Fetching classroom with ID:", classroomData?.title);  
 
 
 
-            console.log("postthreadId", commentData.postdId);           
              const postDocRef = doc(firestore, "posts", commentData.postId);
              const postDocSnap = await getDoc(postDocRef);
              const postData = postDocSnap.data();
@@ -259,7 +244,7 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
                     id: commentDocSnap.id,
                   },
                   postName: postData?.postName,
-                  threadName: classroomData?.title,
+                  classroomName: classroomData?.title,
                 },
               };
 
@@ -270,10 +255,11 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
 
 
   
-    } catch (error) {
-        console.error("Error in getServerSideProps:", error);
-        return { props: {} };
-    }
+       } catch (error) {
+          console.error("Error in getServerSideProps for comments:", error);
+          console.error("Context query:", context.query);
+          return { props: {} };
+      }
 }
 
 

@@ -19,6 +19,9 @@ import {
 
   import moment from 'moment';
 
+  import PostsPage from "../../posts";
+  import UserList from "../../users";
+
 
 
 
@@ -49,8 +52,7 @@ import {
     postAddedByName: string;
     postName: string;
     tenantId: string;
-    threadId: string;
-    threadName: string;
+    classroomName: string;
     total: number;
     updatedDate: string;
     users: Array<{
@@ -128,10 +130,22 @@ useEffect(() => {
 
 
 
+  
   const getPosts = async () => {
     try {
+
+      if (!tenantId) {
+        console.error('No tenantId provided');
+        throw new Error('Tenant ID is required');
+        // or simply return; to exit the function without an error
+      }
+  
+  
       const postsCollectionRef = collection(firestore, 'posts');
-      const q = query(postsCollectionRef, where("threadId", "==", classroomData.id));
+      const q = query(postsCollectionRef, where("classroomId", "==", classroomData.id));
+
+      //let q = query(usersCollectionRef, where('tenantId', '==', tenantId));
+
 
       const querySnapshot = await getDocs(q);
      // const posts = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -143,6 +157,9 @@ useEffect(() => {
       return [];
     }
   };
+  
+
+  
 
   
 
@@ -243,7 +260,7 @@ const getUser = async (id: string) => {
      <Flex direction="row" mb="5">
       {/* User Count */}
       <Box flex="1" p="4" borderWidth="1px" borderRadius="lg">
-        <Text fontSize="2xl">{userInfo?.users?.length || 0}</Text>
+        <Text fontSize="2xl">{classroomData.users.length || 0}</Text>
         <Text>USERS</Text>
       </Box>
 
@@ -254,72 +271,33 @@ const getUser = async (id: string) => {
       </Box>
     </Flex>
 
+  {/* Display list of users 
+  replace with users component*/}
+
+  {classroomData.users && classroomData.users.length > 0 && (
+        <Box borderWidth="1px" borderRadius="lg" p="4" mb="4">
+          <Heading as="h2" size="md" mb="2">Classroom Users</Heading>
+          <Table variant="simple">
+            <Thead>
+              <Tr>
+                <Th>Email</Th>
+                {/* Add other user fields as needed */}
+              </Tr>
+            </Thead>
+            <Tbody>
+              {classroomData.users.map((user, index) => (
+                <Tr key={index}>
+                  <Td>{user.email}</Td>
+                  {/* Render other user fields here */}
+                </Tr>
+              ))}
+            </Tbody>
+          </Table>
+        </Box>
+      )}
 
     
-
-  {/* Personal Details */}
-  <Box borderWidth="1px" borderRadius="lg" overflowX="auto">
-    <Table variant="simple">
-      <Tbody>
-        <Tr>
-          <Td>Added By</Td>
-          <Td>:</Td>
-          <Td>{classroomData.createdBy}</Td>
-        </Tr>
-        <Tr>
-          <Td>Date Added</Td>
-          <Td>:</Td>
-          <Td>{}</Td>
-        </Tr>
-        {/* More rows */}
-      </Tbody>
-    </Table>
-  </Box>
-
-{/* Posts Table */}
-<Box borderWidth="1px" borderRadius="lg" overflowX="auto">
-  <Table variant="simple">
-    <Thead>
-      <Tr>
-        <Th>Post Name</Th>
-        <Th>Added By</Th>
-        <Th>Date Added</Th>
-        <Th>Actions</Th>
-        {/* More headers if needed */}
-      </Tr>
-    </Thead>
-    <Tbody>
-      {allPosts.map(post => (
-        <Tr key={post.id}>
-          <Td>{post.postName}</Td>
-          <Td>{post.postAddedByName}</Td>
-          <Td>{post.dateAdded}</Td>
-          <Td>
-            {/* Actions like edit or delete */}
-          </Td>
-          {/* More columns if needed */}
-        </Tr>
-      ))}
-    </Tbody>
-  </Table>
-</Box>
-
-<Modal isOpen={isModalOpen} onClose={onModalClose}>
-  <ModalOverlay />
-  <ModalContent>
-    <ModalHeader>Confirmation</ModalHeader>
-    <ModalCloseButton />
-    <ModalBody>
-      <Text>{modalConfirmationText}</Text>
-    </ModalBody>
-    <ModalFooter>
-      <Button colorScheme="blue" mr={3} onClick={onModalClose}>
-        Close
-      </Button>
-      <Button variant="ghost">Secondary Action</Button>
-    </ModalFooter>
-  </ModalContent>
-</Modal>
+    <PostsPage filterCondition={{ field: 'classroomId', operator: '==', value: classroomData.id }} />
 
 
 
@@ -331,16 +309,10 @@ const getUser = async (id: string) => {
 
 
 
-        
-        <input
-  type="text"
-  placeholder="Search posts"
-  onChange={applyFilter}
-/>
-      
-    <div> dispay deactivre button</div>
-    <div> maybe display list of admins, number of students, number of posts, number of comments</div>
-    <div> list of student emails</div>
+
+
+
+  
         </>
     );
 
@@ -349,7 +321,7 @@ const getUser = async (id: string) => {
   
 export async function getServerSideProps(context: GetServerSidePropsContext) {
     try {
-        const classroomDocRef = doc(firestore, "threads", context.query.classroom as string);
+        const classroomDocRef = doc(firestore, "classrooms", context.query.classroom as string);
         const classroomDocSnap = await getDoc(classroomDocRef);
 
         //print this context.query.classroom

@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { Classroom } from "../../atoms/classroomAtom";
-import { getDocs, collection, query } from "firebase/firestore";
-import { firestore } from "../../firebase/devclientApp";
-import { Flex, Box, Heading, Text, Table, Thead, Tbody, Tr, Th, Td, Button } from '@chakra-ui/react';
+import { getDocs, collection, query, doc, getDoc, where } from "firebase/firestore";
+import { firestore,auth } from "../../firebase/devclientApp";
+import { Flex, Box, Heading, Text, Table, Thead, Tbody, Tr, Th, Td, Button, Input } from '@chakra-ui/react';
 import Link from 'next/link';
+import { useAuthState } from "react-firebase-hooks/auth";
 
 
 type ClassroomsPageProps = {};
@@ -17,28 +18,85 @@ type User = {
 
 const ClassroomsPage: React.FC<ClassroomsPageProps> = () => {
   const [allClassrooms, setAllClassrooms] = useState<Classroom[]>([]);
+  const [filteredClassrooms, setFilteredClassrooms] = useState<Classroom[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const [tenant, setTenant] =  useState([]);
+  const [user] = useAuthState(auth);
+//import { useAuthState } from "react-firebase-hooks/auth";
+//, auth 
+//import { firestore,auth } from "../../firebase/devclientApp";
+
+
+  const fetchTenantAdminList = async () => {
+    try {
+      // Get the currently logged-in user  
+      if (!user) {
+        console.log('No user logged in');
+        return;
+      }
+
+      console.log('User:', user.uid);
+  
+      // Get the document from TenantAdmins collection with the ID of the logged-in user
+      const tenantAdminRef = doc(firestore, "tenantAdmins", user.uid);
+      const docSnapshot = await getDoc(tenantAdminRef);
+  
+      if (docSnapshot.exists()) {
+        const tenantAdminData = { id: docSnapshot.id, ...docSnapshot.data() };
+        console.log('Tenant Admin data:', tenantAdminData);
+        console.log('Tenant ID:', tenant);
+        setTenant(tenantAdminData.tenants[0]);
+      } else {
+        console.log('No matching tenant admin document found');
+      }
+    } catch (error) {
+      console.error('Error fetching tenant admin data:', error);
+    }
+  };
+
+
+
 
   useEffect(() => {
-    const fetchClassrooms = async () => {
-      const fetchedClassrooms = await getClassrooms();
-      setAllClassrooms(fetchedClassrooms);
-    };
+    if (tenant) {
+      // Call other functions here
+      fetchClassrooms(tenant);
+    }
+  }, [tenant]);
 
-    fetchClassrooms();
-  }, []);
+  useEffect(() => {
+    const filtered = allClassrooms.filter(classroom =>
+      classroom.title.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    setFilteredClassrooms(filtered);
+  }, [searchTerm, allClassrooms]);
 
-  const getClassrooms = async () => {
+  const fetchClassrooms = async (tenantId) => {
     try {
-      const classroomCollectionRef = collection(firestore, 'threads');
-      const q = query(classroomCollectionRef);
+
+      if (!tenantId) {
+        console.error('No tenantId provided');
+        throw new Error('Tenant ID is required');
+        // or simply return; to exit the function without an error
+      }
+  
+      const classroomCollectionRef = collection(firestore, 'classrooms');
+      const q = query(classroomCollectionRef, where('tenantId', '==', 'Freemium'));
       const querySnapshot = await getDocs(q);
       const classrooms = querySnapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as Classroom) }));
       console.log("classrooms", classrooms);
-      return classrooms;
+
+
+      setAllClassrooms(classrooms);
     } catch (error) {
       console.error("Error fetching classrooms:", error);
       return [];
     }
+  };
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
   };
 
   // JSX layout for displaying classrooms
@@ -50,6 +108,14 @@ const ClassroomsPage: React.FC<ClassroomsPageProps> = () => {
         </Box>
       </Flex>
 
+      <Box mb="4">
+        <Input
+          placeholder="Search posts"
+          value={searchTerm}
+          onChange={handleSearchChange}
+        />
+      </Box>
+
       <Box borderWidth="1px" borderRadius="lg" overflowX="auto">
         <Table variant="simple">
           <Thead>
@@ -57,22 +123,21 @@ const ClassroomsPage: React.FC<ClassroomsPageProps> = () => {
               <Th>Title</Th>
               <Th>Date Added</Th>
               <Th>User count</Th>
-              <Th>move this to the details page</Th>
               <Th>Actions</Th>
             </Tr>
           </Thead>
           <Tbody>
-            {allClassrooms.map(classroom => (
+            {filteredClassrooms.map(classroom => (
               <Tr key={classroom.id}>
                 <Td>{classroom.title}</Td>
                 <Td>{classroom.dateAdded}</Td>
                 <Td>{classroom.users.length}</Td>
 
-                <Td>{classroom.users.map(user => user.email).join(", ")}</Td>                <Td>
+                               <Td>
                 <Link href={`/classrooms/${classroom.id}`}>
   <Button colorScheme="blue">Details</Button>
 </Link>
-                  <Button colorScheme="red" ml="2">Deactivate</Button>
+                  {/*<Button colorScheme="red" ml="2">Deactivate</Button>*/}
                 </Td>
               </Tr>
             ))}
