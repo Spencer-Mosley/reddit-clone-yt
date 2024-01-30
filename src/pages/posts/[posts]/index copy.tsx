@@ -54,7 +54,7 @@ type PostPageProps = {
     postData: PostType;
 };
 
-const PostPage: React.FC<PostPageProps> = () => {
+const PostPage: React.FC<PostPageProps> = ({ postData }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedInfo, setSelectedInfo] = useState(null);
     const [modalConfirmationType, setModalConfirmationType] = useState('');
@@ -74,64 +74,36 @@ const PostPage: React.FC<PostPageProps> = () => {
     const [filteredComments, setFilteredComments] = useState([]);
 
     const [user] = useAuthState(auth);
-    const router = useRouter();
-    const [postData, setPostData] = useState(null);
-    const postId = router.query.posts;
-    console.log("router", router.query);
-
-    //
-    //const [postName, setPostName] = useState('');
-    //const [classroomName, setClassroomName] = useState('');
-
-
-
-
-
-
-
-
-
 
 
     useEffect(() => {
-        console.log("getting here postId", postId);
+        console.log("use effect getting post data");
+        console.log("postData", postData);
 
+        const id = "id-20230410230491";
+        console.log("postData", postData);
+        if (id) {
+            //getUser(postData.createdBy);
+        } else {
+            // history.push('/admin/posts');
+        }
 
-        const fetchPostData = async () => {
-            // Ensure postId is a string
-            const validPostId = Array.isArray(postId) ? postId[0] : postId;
-            console.log("validPostId", validPostId);
-    
-            if (validPostId) {
-                try {
-
-
-
-                    const postDocRef = doc(firestore, "posts", validPostId);
-                    const postDocSnap = await getDoc(postDocRef);
-    
-                    if (postDocSnap.exists()) {
-                        const data = postDocSnap.data();
-                        setPostData(data)
-
-                        // Process postData as needed
-                    } else {
-                        console.log("No post found for ID:", validPostId);
-                    }
-                } catch (error) {
-                    console.error("Error fetching post:", error);
-                }
-            }
+        return () => {
+            // Unsubscribe or cleanup logic
         };
-    
-        fetchPostData();
-    }, [postId]);
-    
+    }, []);
 
-    
+    /*
+    useEffect(() => {
+        const fetchPosts = async () => {
+            const fetchedPosts = await getPosts();
+            setAllPosts(fetchedPosts);
+        };
 
+        fetchPosts();
+    }, []);
 
-    
+    */
 
     /*
     probably needs to be get comments
@@ -234,8 +206,6 @@ const PostPage: React.FC<PostPageProps> = () => {
             </Box>
           </Flex>
       
-
-        {postData ? (
           <Box borderWidth="1px" borderRadius="lg" overflowX="auto">
             <Table variant="simple">
               <Tbody>
@@ -261,15 +231,10 @@ const PostPage: React.FC<PostPageProps> = () => {
                 </Tr>
               </Tbody>
             </Table>
-            <CommentsPage filterCondition={{ field: 'postId', operator: '==', value: postData.id }} />
+            
           </Box>
-          
 
-          
-        ) : (
-            <div>Loading...</div>
-        )}
-
+          <CommentsPage filterCondition={{ field: 'postId', operator: '==', value: postData.id }} />
           
           
 
@@ -278,7 +243,75 @@ const PostPage: React.FC<PostPageProps> = () => {
     );
 };
 
+export async function getServerSideProps(context: GetServerSidePropsContext) {
+    try {
 
+               // const commentDocRef = doc(firestore, "comments", context.query.comment as string);
+       console.log("contexttPost", context.query);
+       const postDocRef = doc(firestore, "posts", context.query.posts as string);
+       const postDocSnap = await getDoc(postDocRef);
+
+
+        console.log("Fetching post with ID:", context.query.posts);
+
+        const postData = postDocSnap.data();
+       
+        if (!postData) {
+            console.log("No post found for ID:");
+            return { props: {} };
+        }
+
+        if(postData){
+            //const classroomDocRef = doc(firestore, "classrooms", commentData.classroomId);
+            console.log("classroomId", postData.classroomId);
+            const classroomDocRef = doc(firestore, "classrooms", postData.classroomId);
+        const classroomDocSnap = await getDoc(classroomDocRef);
+            const classroomData = classroomDocSnap.data();
+            const classroomName = classroomData?.title;
+            console.log("Fetching classroom with Title:", classroomData?.title);  
+
+
+/*
+probably needs to be the comment data
+            console.log("postclassroomId", postData.postdId);           
+             const postDocRef = doc(firestore, "posts", commentData.postId);
+             const postDocSnap = await getDoc(postDocRef);
+             const postData = postDocSnap.data();
+                const postName = postData?.postName;
+            console.log("Fetching post with ID:", postData?.postName);
+
+*/
+            console.log("Fetched post data:", postData);
+
+        
+        
+            if (postData?.timestamp) {
+                postData.timestamp = postData.timestamp.toMillis();
+            }
+    
+            return {
+                props: {
+                  postData: {
+                    ...postData,
+                    id: postDocSnap.id,
+                  },
+                },
+              };
+
+
+
+
+        }
+
+
+       
+        
+    
+    } catch (error) {
+        console.error("Error in getServerSideProps:", error);
+        return { props: {} };
+    }
+}
 
 
 export default PostPage;

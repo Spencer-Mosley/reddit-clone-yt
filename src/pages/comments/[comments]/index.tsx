@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { GetServerSideProps, GetServerSidePropsContext } from "next";
 import { getDoc, doc, collection, getDocs, query, where } from "firebase/firestore";
-import { firestore } from "../../../firebase/devclientApp";
+import { firestore, auth } from "../../../firebase/devclientApp";
 import { Comment } from "../../../atoms/commentAtom";
 import safeJsonStringify from "safe-json-stringify";
 import {
@@ -9,6 +9,11 @@ import {
     Modal, ModalOverlay, ModalContent, ModalHeader, ModalFooter, ModalBody, ModalCloseButton
 } from '@chakra-ui/react';
 import moment from 'moment';
+//import { user } from "firebase-functions/v1/auth";
+import { useAuthState } from "react-firebase-hooks/auth";
+
+import { useRouter } from "next/router";
+
 
 type UserInfo = {
     id?: string;
@@ -48,7 +53,10 @@ type CommentPageProps = {
     commentData: Comment;
 };
 
-const CommentPage: React.FC<CommentPageProps> = ({ commentData, postName, threadName }) => {
+
+
+
+const CommentPage: React.FC<CommentPageProps> = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedInfo, setSelectedInfo] = useState(null);
     const [modalConfirmationType, setModalConfirmationType] = useState('');
@@ -66,6 +74,88 @@ const CommentPage: React.FC<CommentPageProps> = ({ commentData, postName, thread
         updatedAt: moment().format()
     });
     const [filteredPosts, setFilteredPosts] = useState([]);
+
+    const [user] = useAuthState(auth);
+
+
+
+
+    const router = useRouter();
+    const commentId = router.query.comments;
+    console.log("router", router.query);
+    const [commentData, setCommentData] = useState(null);
+    const [postName, setPostName] = useState('');
+    const [classroomName, setClassroomName] = useState('');
+
+
+    useEffect(() => {
+
+      console.log("does this get called??");
+      console.log("commentId", commentId);
+
+
+      const fetchCommentData = async () => {
+        console.log("does this get called??");
+
+          if (!commentId) return;
+
+
+      console.log("does this get called??");
+
+          try {
+            const commentIdString = Array.isArray(commentId) ? commentId[0] : commentId;
+
+
+            if (!commentIdString || commentIdString === '') {
+              console.error('Invalid commentId:', commentIdString);
+              return;
+            }
+          
+
+
+
+            
+              console.log("commentIdString", commentIdString);
+const commentDocRef = doc(firestore, "comments", commentIdString);
+              const commentDocSnap = await getDoc(commentDocRef);
+
+
+
+
+
+              if (commentDocSnap.exists()) {
+                  const data = commentDocSnap.data();
+                  console.log("Fetched comment data:", data);
+
+                  setCommentData(data);
+                  console.log("Fetched comment data:", data);
+
+                  // Fetch classroom data
+                  const classroomDocRef = doc(firestore, "classrooms", data.classroomId);
+                  const classroomDocSnap = await getDoc(classroomDocRef);
+                  if (classroomDocSnap.exists()) {
+                      setClassroomName(classroomDocSnap.data()?.title);
+                  }
+
+                  // Fetch post data
+                  const postDocRef = doc(firestore, "posts", data.postId);
+                  const postDocSnap = await getDoc(postDocRef);
+                  if (postDocSnap.exists()) {
+                      setPostName(postDocSnap.data()?.postName);
+                  }
+              } else {
+                  console.log("No comment found for ID:", commentId);
+              }
+          } catch (error) {
+              console.error("Error fetching comment data:", error);
+          }
+      };
+
+      fetchCommentData();
+  }, [commentId]);
+
+
+
 
 
 
@@ -119,7 +209,7 @@ const CommentPage: React.FC<CommentPageProps> = ({ commentData, postName, thread
                 console.log("No such document!");
             }
         } catch (error) {
-            console.error("Error getting document:", error);
+            console.error("Error getting documect users:", error);
         } finally {
             setIsDataLoading(false);
         }
@@ -145,13 +235,14 @@ const CommentPage: React.FC<CommentPageProps> = ({ commentData, postName, thread
     //}
 
     return (
-        <>
-          <Flex mb="4" align="center">
-            <Box flex="1">
-              <Heading as="h1" size="lg">Comment Details</Heading>
-            </Box>
-          </Flex>
-      
+      <>
+        <Flex mb="4" align="center">
+          <Box flex="1">
+            <Heading as="h1" size="lg">Comment Details</Heading>
+          </Box>
+        </Flex>
+    
+        {commentData ? (
           <Box borderWidth="1px" borderRadius="lg" overflowX="auto">
             <Table variant="simple">
               <Tbody>
@@ -182,17 +273,33 @@ const CommentPage: React.FC<CommentPageProps> = ({ commentData, postName, thread
               </Tbody>
             </Table>
           </Box>
-        </>
-      );
+        ) : (
+          <div>Loading...</div>
+        )}
+      </>
+    );
 };
 
+
+/*
 export async function getServerSideProps(context: GetServerSidePropsContext) {
     try {
 
        // const commentDocRef = doc(firestore, "comments", context.query.comment as string);
        //console.log("contextt", context);
+
+       if (!user) {
+        console.log('No user logged in');
+        return;
+      }
+
+      console.log('User:', user.uid);
+
        console.log("context.querry.comment", context.query.comments);
+       console.log(auth.currentUser?.uid);
        const commentDocRef = doc(firestore, "comments", context.query.comments as string);
+       console.log("before get doc");
+
         const commentDocSnap = await getDoc(commentDocRef);
 
 
@@ -207,9 +314,16 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
         const commentData = commentDocSnap.data();
 
         if (!commentData) {
-            console.log("No comment found for ID:");
-            return { props: {} };
-        }
+          console.log("No comment found for ID:");
+          return {
+              props: {
+                  commentData: {
+                      id: '',
+                      // other properties with default values
+                  },
+              },
+          };
+      }
 
         if(commentData){
             console.log("classroomId", commentData.classroomId);
@@ -222,20 +336,20 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
 
 
 
-             const postDocRef = doc(firestore, "posts", commentData.postId);
-             const postDocSnap = await getDoc(postDocRef);
-             const postData = postDocSnap.data();
-                const postName = postData?.postName;
-            console.log("Fetching post with ID:", postData?.postName);
+            // const postDocRef = doc(firestore, "posts", commentData.postId);
+            // const postDocSnap = await getDoc(postDocRef);
+            // const postData = postDocSnap.data();
+               // const postName = postData?.postName;
+               const postName = "temp"
+            //console.log("Fetching post with ID:", postData?.postName);
+
+            console.log("getting here");
+
+            console.log("Fetched comment data222:", commentData);
 
 
-            console.log("Fetched comment data:", commentData);
 
-        
-        
-            if (commentData?.timestamp) {
-                commentData.timestamp = commentData.timestamp.toMillis();
-            }
+            console.log("getting here");
     
             return {
                 props: {
@@ -243,7 +357,7 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
                     ...commentData,
                     id: commentDocSnap.id,
                   },
-                  postName: postData?.postName,
+                  postName: postName,
                   classroomName: classroomData?.title,
                 },
               };
@@ -261,6 +375,7 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
           return { props: {} };
       }
 }
+*/
 
 
 export default CommentPage;
