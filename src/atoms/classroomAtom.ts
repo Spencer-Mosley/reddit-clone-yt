@@ -8,7 +8,6 @@ export interface Classroom {
     tenantId: string;
     title: string;
     userEmailAddress: string[];
-    users: string[];
     userTokens: string[];
     createdBy: string;
     dateAdded: string;

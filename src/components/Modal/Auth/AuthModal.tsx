@@ -65,7 +65,8 @@ const AuthModal: React.FC = () => {
             border="1px solid red"
             >
 
-{modalState.view === "login"  ? <Login /> : <ResetPassword toggleView={toggleView} />}
+{/*modalState.view === "login"  ? <Login /> : <ResetPassword toggleView={toggleView} />*/}
+<Login />
 
 
              {/* <AuthInputs /> */}

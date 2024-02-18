@@ -22,8 +22,13 @@ import { useRecoilValue } from "recoil";
 import React, { useState,  useContext } from 'react';
 //import { Link } from 'react-router-dom';
 
-import { firestore } from 'src/firebase/devclientApp';
-import { auth } from 'src/firebase/devclientApp';
+import { firestore } from '../firebase/devclientApp';
+import { auth } from '../firebase/devclientApp';
+import { Query } from "firebase/firestore";
+
+
+
+
 
 import { Box, Text, Flex, Progress, VStack, Heading } from '@chakra-ui/react';
 import { cp } from "fs";
@@ -75,7 +80,7 @@ const Home: NextPage = () => {
       const docSnapshot = await getDoc(tenantAdminRef);
   
       if (docSnapshot.exists()) {
-        const tenantAdminData = { id: docSnapshot.id, ...docSnapshot.data() };
+        const tenantAdminData = {  ...docSnapshot.data() };
         console.log('Tenant Admin data:', tenantAdminData);
         console.log('Tenant ID:', tenant);
         setTenant(tenantAdminData.tenants[0]);
@@ -90,7 +95,7 @@ const Home: NextPage = () => {
 
   const fetchUsers = async () => {
     try {
-      let q;
+      let q: Query<DocumentData>;;
       if (tenant) {
         console.log('fetch userstenantID', tenant);
         q = query(collection(firestore, "users"), where('tenantId', '==', tenant));
@@ -131,6 +136,7 @@ const Home: NextPage = () => {
     }
   };
 
+  /*
   const fetchPosts = async () => {
     try {
 
@@ -172,6 +178,42 @@ const Home: NextPage = () => {
       // Handle error appropriately
     }
   };
+
+  */
+  const fetchPosts = async () => {
+    try {
+      let q: Query<DocumentData>;
+      if (tenant) {
+        q = query(collection(firestore, "posts"), where('tenantId', '==', tenant));
+      } else {
+        q = query(collection(firestore, "posts"));
+      }
+      const querySnapshot = await getDocs(q);
+      // rest of your code
+    } catch (error) {
+      console.error('Error fetching posts:', error);
+      // Handle error appropriately
+    }
+  };
+  
+  const fetchComments = async () => {
+    try {
+      let q: Query<DocumentData>;
+      if (tenant) {
+        q = query(collection(firestore, "comments"), where('tenantId', '==', tenant));
+      } else {
+        q = query(collection(firestore, "comments"));
+      }
+      const querySnapshot = await getDocs(q);
+      // rest of your code
+    } catch (error) {
+      console.error('Error fetching comments:', error);
+      // Handle error appropriately
+    }
+  };
+
+
+
   
   useEffect(() => {
      fetchTenantAdminList();

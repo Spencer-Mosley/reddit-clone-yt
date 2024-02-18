@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Classroom } from "../../atoms/classroomAtom";
+//import { Classroom } from "../../atoms/classroomAtom";
 import { getDocs, collection, query, doc, getDoc, where } from "firebase/firestore";
 import { firestore,auth } from "../../firebase/devclientApp";
 import { Flex, Box, Heading, Text, Table, Thead, Tbody, Tr, Th, Td, Button, Input } from '@chakra-ui/react';
@@ -14,6 +14,34 @@ type User = {
   // other properties...
 };
 
+type UserData = {
+  id: string;
+  tenants: string[]; // Assuming 'tenants' is an array of strings
+  // Include other properties as necessary
+};
+
+type UserType = {
+  id: string;
+  tenants: string[]; // Add this line if 'tenants' is an array of strings
+  // ... any other properties
+};
+
+type Classroom = {
+  // ... other properties of Classroom
+  users: User[]; // Assuming Classroom has a users property
+  id: string;
+    name: string;
+    classMemberNames: string[];
+    joincode: string;
+    tenantId: string;
+    title: string;
+    userEmailAddress: string[];
+    userTokens: string[];
+    createdBy: string;
+    dateAdded: string;
+};
+
+
 
 
 const ClassroomsPage: React.FC<ClassroomsPageProps> = () => {
@@ -21,8 +49,10 @@ const ClassroomsPage: React.FC<ClassroomsPageProps> = () => {
   const [filteredClassrooms, setFilteredClassrooms] = useState<Classroom[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
 
-  const [tenant, setTenant] =  useState([]);
+  //const [tenant, setTenant] =  useState([]);
   const [user] = useAuthState(auth);
+  const [userData, setUserData] = useState<UserData>({ id: '', tenants: [] });
+
 //import { useAuthState } from "react-firebase-hooks/auth";
 //, auth 
 //import { firestore,auth } from "../../firebase/devclientApp";
@@ -43,10 +73,9 @@ const ClassroomsPage: React.FC<ClassroomsPageProps> = () => {
       const docSnapshot = await getDoc(tenantAdminRef);
   
       if (docSnapshot.exists()) {
-        const tenantAdminData = { id: docSnapshot.id, ...docSnapshot.data() };
+        const tenantAdminData: UserData = docSnapshot.data() as UserData;
         console.log('Tenant Admin data:', tenantAdminData);
-        console.log('Tenant ID:', tenant);
-        setTenant(tenantAdminData.tenants[0]);
+        setUserData(tenantAdminData); // Set the fetched data
       } else {
         console.log('No matching tenant admin document found');
       }
@@ -59,11 +88,13 @@ const ClassroomsPage: React.FC<ClassroomsPageProps> = () => {
 
 
   useEffect(() => {
-    if (tenant) {
-      // Call other functions here
-      fetchClassrooms(tenant);
+    if (userData.tenants.length > 0) {
+      // Use the first tenant ID or loop through all if necessary
+      const tenantId = userData.tenants[0];
+      fetchClassrooms(tenantId);
     }
-  }, [tenant]);
+  }, [userData]);
+  
 
   useEffect(() => {
     const filtered = allClassrooms.filter(classroom =>
@@ -72,7 +103,7 @@ const ClassroomsPage: React.FC<ClassroomsPageProps> = () => {
     setFilteredClassrooms(filtered);
   }, [searchTerm, allClassrooms]);
 
-  const fetchClassrooms = async (tenantId) => {
+  const fetchClassrooms = async (tenantId: string) => {
     try {
 
       if (!tenantId) {
@@ -84,7 +115,7 @@ const ClassroomsPage: React.FC<ClassroomsPageProps> = () => {
       const classroomCollectionRef = collection(firestore, 'classrooms');
       const q = query(classroomCollectionRef, where('tenantId', '==', 'Freemium'));
       const querySnapshot = await getDocs(q);
-      const classrooms = querySnapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as Classroom) }));
+      const classrooms = querySnapshot.docs.map(doc => ({  ...(doc.data() as Classroom) }));
       console.log("classrooms", classrooms);
 
 

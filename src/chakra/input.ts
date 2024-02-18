@@ -33,6 +33,6 @@ export const Input: ComponentStyleConfig = {
   },
   variants: {},
   defaultProps: {
-    variant: null,
+    variant: "myCustomVariant",
   },
 };

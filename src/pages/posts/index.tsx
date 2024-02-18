@@ -7,6 +7,7 @@ import CommentPage from "../comments/[comments]";
 import { useAuthState } from "react-firebase-hooks/auth";
 
 
+
 type Post = {
   id: string;
   title: string;
@@ -14,14 +15,28 @@ type Post = {
   postName: string;
   addedBy: string;
   postAddedBy: string;
+  isActive: boolean;
+  classroomName: string;
   // other properties...
 };
 
-type PostsPageProps = {
-  filterCondition?: any; // Define a more specific type based on your filtering needs
+type FilterCondition = {
+  field: string;
+  operator: string;
+  value: string;
 };
 
-const PostsPage: React.FC = ({ filterCondition }) => {
+type PostsPageProps = {
+  filterCondition?: FilterCondition; // Define a more specific type based on your filtering needs
+};
+
+type TenantAdminData = {
+  id: string;
+  tenants: string[];  // include other properties as needed
+};
+
+
+const PostsPage: React.FC<PostsPageProps> = ({ filterCondition }) => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredPosts, setFilteredPosts] = useState<Post[]>([]);
@@ -30,50 +45,48 @@ const PostsPage: React.FC = ({ filterCondition }) => {
 
 
 
+  //const tenantAdminData: TenantAdminData = // fetch or define tenantAdminData
 
 
 
-
-  const [tenant, setTenant] =  useState([]);
-  const [user] = useAuthState(auth);
+  const [tenant, setTenant] = useState<string>('');
+    const [user] = useAuthState(auth);
   //getDoc
 
 
 
 
-
   const fetchTenantAdminList = async () => {
-    try {
-      // Get the currently logged-in user  
-      if (!user) {
-        console.log('No user logged in');
-        return;
-      }
-
-      console.log('User:', user.uid);
-  
-      // Get the document from TenantAdmins collection with the ID of the logged-in user
-      const tenantAdminRef = doc(firestore, "tenantAdmins", user.uid);
-      const docSnapshot = await getDoc(tenantAdminRef);
-  
-      if (docSnapshot.exists()) {
-        const tenantAdminData = { id: docSnapshot.id, ...docSnapshot.data() };
-        console.log('Tenant Admin data:', tenantAdminData);
-        console.log('Tenant ID:', tenant);
-        setTenant(tenantAdminData.tenants[0]);
-        return tenantAdminData.tenants[0];
-      } else {
-        console.log('No matching tenant admin document found');
-        return null;
-      }
-    } catch (error) {
-      console.error('Error fetching tenant admin data:', error);
+  try {
+    // Get the currently logged-in user  
+    if (!user) {
+      console.log('No user logged in');
+      return;
     }
-  };
+
+    console.log('User:', user.uid);
+
+    // Get the document from TenantAdmins collection with the ID of the logged-in user
+    const tenantAdminRef = doc(firestore, "tenantAdmins", user.uid);
+    const docSnapshot = await getDoc(tenantAdminRef);
+
+    if (docSnapshot.exists()) {
+      const tenantAdminData = docSnapshot.data() as TenantAdminData;
+      console.log('Tenant Admin data:', tenantAdminData);
+      console.log('Tenant ID:', tenant);
+      setTenant(tenantAdminData.tenants[0]);
+      return tenantAdminData.tenants[0];
+    } else {
+      console.log('No matching tenant admin document found');
+    }
+  } catch (error) {
+    console.error('Error fetching tenant admin data:', error);
+  }
+};
 
 
-  const fetchPosts = async (tenantId) => {
-    try {
+const fetchPosts = async (tenantId: string) => {
+  try {
       
       if (!tenantId) {
         console.error('No tenantId provided');
@@ -100,7 +113,7 @@ const PostsPage: React.FC = ({ filterCondition }) => {
 
 
       const querySnapshot = await getDocs(q);
-      const fetchedPosts = querySnapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as Post) }));
+      const fetchedPosts = querySnapshot.docs.map(doc => ({ ...(doc.data() as Post) }));
       console.log("Fetched posts:", fetchedPosts);
 
       setPosts(fetchedPosts);

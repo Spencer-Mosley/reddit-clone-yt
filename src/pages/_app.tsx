@@ -14,12 +14,25 @@ import {
 import { firestore } from '../firebase/devclientApp';
 
 
+
 function MyApp({ Component, pageProps }: AppProps) {
   const [user, loading, error] = useAuthState(auth);
   const router = useRouter();
 
 
-  const [tenant, setTenant] =  useState([]);
+
+  interface TenantAdminData {
+    id: string;
+    tenants: string[]; // Adjust the type according to your data structure
+    // ... any other properties of tenantAdminData
+  }
+  
+
+
+
+
+  const [tenant, setTenant] = useState<string | undefined>(undefined);
+
 
 
   const fetchTenantAdminList = async () => {
@@ -37,8 +50,8 @@ function MyApp({ Component, pageProps }: AppProps) {
       const docSnapshot = await getDoc(tenantAdminRef);
   
       if (docSnapshot.exists()) {
-        const tenantAdminData = { id: docSnapshot.id, ...docSnapshot.data() };
-        console.log('Tenant Admin data:', tenantAdminData);
+        const tenantAdminData = docSnapshot.data() as TenantAdminData;
+    console.log('Tenant Admin data:', tenantAdminData);
         console.log('Tenant ID:', tenant);
         setTenant(tenantAdminData.tenants[0]);
       } else {
@@ -52,11 +65,18 @@ function MyApp({ Component, pageProps }: AppProps) {
 
 
   useEffect(() => {
-    // If the user is not logged in and we're not on the login page, redirect to login
-    if (!loading && !user && router.pathname !== '/login' || !tenant) {
+    // Add condition based on whether tenant is an array or a single value
+    const shouldRedirect = !loading && !user && router.pathname !== '/login' || 
+                           !loading && tenant?.length === 0; // If tenant is an array
+    // or
+    // const shouldRedirect = !loading && !user && router.pathname !== '/login' || 
+    //                         !loading && !tenant; // If tenant is a single value
+  
+    if (shouldRedirect) {
       router.push('/login');
     }
   }, [user, loading, router, tenant]);
+  
 
 
 

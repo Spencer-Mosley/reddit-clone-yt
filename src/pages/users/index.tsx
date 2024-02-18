@@ -36,44 +36,60 @@ type UserListProps = {
 
 };
 
-const UserList: React.FC = ({ filterCondition }) => {
+type FilterCondition = {
+  field: string;
+  operator: string;
+  value: string;
+};
+
+type TenantAdminData = {
+  id: string;
+  tenants: string[];
+  // other properties...
+};
+
+
+const UserList: React.FC<UserListProps> = ({ filterCondition }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [allUsers, setAllUsers] = useState<User[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
 
 
-  const [tenant, setTenant] =  useState([]);
-  const [user] = useAuthState(auth);
+  const [tenant, setTenant] = useState<string>('');
+    const [user] = useAuthState(auth);
 
 
-  const fetchTenantAdminList = async () => {
-    try {
-      // Get the currently logged-in user  
-      if (!user) {
-        console.log('No user logged in');
-        return;
+    const fetchTenantAdminList = async () => {
+      try {
+        // Get the currently logged-in user  
+        if (!user) {
+          console.log('No user logged in');
+          return;
+        }
+    
+        console.log('User:', user.uid);
+    
+        // Get the document from TenantAdmins collection with the ID of the logged-in user
+        const tenantAdminRef = doc(firestore, "tenantAdmins", user.uid);
+        const docSnapshot = await getDoc(tenantAdminRef);
+    
+        if (docSnapshot.exists()) {
+          const data = docSnapshot.data() as TenantAdminData;
+          if (data) {
+            const tenantAdminData = {  ...data };
+            console.log('Tenant Admin data:', tenantAdminData);
+            console.log('Tenant ID:', tenant);
+            setTenant(tenantAdminData.tenants[0]);
+          } else {
+            console.log('No matching tenant admin document found');
+          }
+        } // Removed semicolon here
+      } catch (error) {
+        console.error('Error fetching tenant admin data:', error);
       }
+    };
 
-      console.log('User:', user.uid);
-  
-      // Get the document from TenantAdmins collection with the ID of the logged-in user
-      const tenantAdminRef = doc(firestore, "tenantAdmins", user.uid);
-      const docSnapshot = await getDoc(tenantAdminRef);
-  
-      if (docSnapshot.exists()) {
-        const tenantAdminData = { id: docSnapshot.id, ...docSnapshot.data() };
-        console.log('Tenant Admin data:', tenantAdminData);
-        console.log('Tenant ID:', tenant);
-        setTenant(tenantAdminData.tenants[0]);
-      } else {
-        console.log('No matching tenant admin document found');
-      }
-    } catch (error) {
-      console.error('Error fetching tenant admin data:', error);
-    }
-  };
-
-  const fetchUsers = async (tenantId) => {
+  const fetchUsers = async (tenantId: string) => {
     try {
       // Check if tenantId is provided, if not, throw an error or return early
       if (!tenantId) {
@@ -93,7 +109,7 @@ const UserList: React.FC = ({ filterCondition }) => {
       console.log("q", q);
   
       const querySnapshot = await getDocs(q);
-      const fetchedUsers = querySnapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as User) }));
+      const fetchedUsers = querySnapshot.docs.map(doc => ({ ...(doc.data() as User) }));
       setAllUsers(fetchedUsers);
       setFilteredUsers(fetchedUsers);
       console.log("Fetched users:", fetchedUsers);

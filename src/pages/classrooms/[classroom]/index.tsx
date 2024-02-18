@@ -2,7 +2,7 @@ import React, { useState, useEffect  } from "react";
 import { GetServerSideProps, GetServerSidePropsContext } from "next";
 import {getDoc, doc, collection, getDocs, query, where} from "firebase/firestore";
 import {firestore} from "../../../firebase/devclientApp";
-import { Classroom } from "../../../atoms/classroomAtom";
+//import { Classroom } from "../../../atoms/classroomAtom";
 import safeJsonStringify from "safe-json-stringify";
 import {
     Box, Spinner, Heading, Text, Flex, Table, Thead, Tbody, Tr, Th, Td, Button
@@ -70,6 +70,41 @@ type ClassroomPageProps = {
     classroomData: Classroom;
 };
 
+
+
+
+type User = {
+  email: string;
+  // Include other properties that a user might have
+  // userToken?: string;
+  // isCommented: boolean;
+  // read: number;
+};
+
+
+type Classroom = {
+  // ... other properties of Classroom
+  users: User[]; // Assuming Classroom has a users property
+  id: string;
+    name: string;
+    classMemberNames: string[];
+    joincode: string;
+    tenantId: string;
+    title: string;
+    userEmailAddress: string[];
+    userTokens: string[];
+    createdBy: string;
+    dateAdded: string;
+};
+
+
+type FilterCondition = {
+  field: string;
+  operator: string;
+  value: string;
+};
+
+
 //const ClassroomPage: React.FC<ClassroomPageProps> = ( {classroomData, match, history }) => {
     const ClassroomPage: React.FC<ClassroomPageProps> = ( {classroomData }) => {
 
@@ -134,7 +169,7 @@ useEffect(() => {
   const getPosts = async () => {
     try {
 
-      if (!tenantId) {
+      if (!classroomData.tenantId) {
         console.error('No tenantId provided');
         throw new Error('Tenant ID is required');
         // or simply return; to exit the function without an error
@@ -149,7 +184,7 @@ useEffect(() => {
 
       const querySnapshot = await getDocs(q);
      // const posts = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      const posts = querySnapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as Post) }));      
+      const posts = querySnapshot.docs.map(doc => ({  ...(doc.data() as Post) }));      
       console.log("posts", posts);
       return posts;
     } catch (error) {
@@ -318,7 +353,7 @@ const getUser = async (id: string) => {
 
   };
 
-  
+  /*
 export async function getServerSideProps(context: GetServerSidePropsContext) {
     try {
         const classroomDocRef = doc(firestore, "classrooms", context.query.classroom as string);
@@ -377,6 +412,8 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
     }
     
 }
+
+*/
 
 
 export default ClassroomPage;

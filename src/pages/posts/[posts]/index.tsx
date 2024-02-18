@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { GetServerSideProps, GetServerSidePropsContext } from "next";
 import { getDoc, doc, collection, getDocs, query, where } from "firebase/firestore";
 import { firestore, auth } from "../../../firebase/devclientApp";
-import { Post as PostType } from "../../../atoms/postAtom";
+//import { Post as PostType } from "../../../atoms/postAtom";
 import safeJsonStringify from "safe-json-stringify";
 import {
     Box, Spinner, Heading, Text, Flex, Table, Thead, Tbody, Tr, Th, Td, Button,
@@ -51,7 +51,7 @@ type Post = {
 };
 
 type PostPageProps = {
-    postData: PostType;
+    postData: Post;
 };
 
 const PostPage: React.FC<PostPageProps> = () => {
@@ -71,12 +71,10 @@ const PostPage: React.FC<PostPageProps> = () => {
         createdAt: moment().format(),
         updatedAt: moment().format()
     });
-    const [filteredComments, setFilteredComments] = useState([]);
-
+    const [filteredComments, setFilteredComments] = useState<Post[]>([]);
     const [user] = useAuthState(auth);
     const router = useRouter();
-    const [postData, setPostData] = useState(null);
-    const postId = router.query.posts;
+    const [postData, setPostData] = useState<Post | null>(null);    const postId = router.query.posts;
     console.log("router", router.query);
 
     //
@@ -111,8 +109,12 @@ const PostPage: React.FC<PostPageProps> = () => {
                     const postDocSnap = await getDoc(postDocRef);
     
                     if (postDocSnap.exists()) {
-                        const data = postDocSnap.data();
-                        setPostData(data)
+                        const data = postDocSnap.data() as Post;;
+                        if ('id' in data && 'addedDate' in data /* check other properties as needed */) {
+                            setPostData(data as Post);
+                          } else {
+                            console.error('Post data is missing required properties');
+                          }
 
                         // Process postData as needed
                     } else {
@@ -167,13 +169,15 @@ const PostPage: React.FC<PostPageProps> = () => {
     const getComments = async () => {
         try {
             const postsCollectionRef = collection(firestore, 'comments');
-            const q = query(postsCollectionRef, where("postId", "==", postData.id));
-            //const q = query(postsCollectionRef);
-
-            const querySnapshot = await getDocs(q);
-            const comments = querySnapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as Post) }));
-            console.log("comments", comments);
-            return comments;
+            if (postData) {
+                const q = query(postsCollectionRef, where("postId", "==", postData.id));
+    
+                const querySnapshot = await getDocs(q);
+                const comments = querySnapshot.docs.map(doc => ({  ...(doc.data() as Post) }));
+                console.log("comments", comments);
+                return comments;
+            }
+            return [];
         } catch (error) {
             console.error("Error fetching comments:", error);
             return [];

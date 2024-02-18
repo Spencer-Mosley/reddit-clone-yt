@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { GetServerSideProps, GetServerSidePropsContext } from "next";
 import { getDoc, doc, collection, getDocs, query, where } from "firebase/firestore";
 import { firestore, auth } from "../../../firebase/devclientApp";
-import { Comment } from "../../../atoms/commentAtom";
+//import { Comment } from "../../../atoms/commentAtom";
 import safeJsonStringify from "safe-json-stringify";
 import {
     Box, Spinner, Heading, Text, Flex, Table, Thead, Tbody, Tr, Th, Td, Button,
@@ -24,6 +24,21 @@ type UserInfo = {
     addedBy: string;
     createdAt: string;
     updatedAt: string;
+};
+
+type Comment = {
+  id: string;
+  name: string;
+  classMemberNames: string[];
+  joincode: string;
+  tenantId: string;
+  title: string;
+  userEmailAddress: string[];
+  users: string[];
+  userTokens: string[];
+  createdBy: string;
+  dateAdded: string;
+
 };
 
 type Post = {
@@ -53,6 +68,18 @@ type CommentPageProps = {
     commentData: Comment;
 };
 
+// Assuming this is the structure of your document's data
+type CommentData = {
+  id: string;
+  commentText: string;
+  senderEmail: string;
+  classroomId: string; 
+  postId: string;
+  classroomName: string;
+  dateSent: string;
+  // ...other fields that match the structure of your Firestore document
+};
+
 
 
 
@@ -73,8 +100,7 @@ const CommentPage: React.FC<CommentPageProps> = () => {
         createdAt: moment().format(),
         updatedAt: moment().format()
     });
-    const [filteredPosts, setFilteredPosts] = useState([]);
-
+    const [filteredPosts, setFilteredPosts] = useState<Post[]>([]);
     const [user] = useAuthState(auth);
 
 
@@ -83,9 +109,10 @@ const CommentPage: React.FC<CommentPageProps> = () => {
     const router = useRouter();
     const commentId = router.query.comments;
     console.log("router", router.query);
-    const [commentData, setCommentData] = useState(null);
+    const [commentData, setCommentData] = useState<CommentData | null>(null);
     const [postName, setPostName] = useState('');
     const [classroomName, setClassroomName] = useState('');
+    
 
 
     useEffect(() => {
@@ -124,10 +151,10 @@ const commentDocRef = doc(firestore, "comments", commentIdString);
 
 
               if (commentDocSnap.exists()) {
-                  const data = commentDocSnap.data();
-                  console.log("Fetched comment data:", data);
+                 
 
-                  setCommentData(data);
+                  const data = commentDocSnap.data() as CommentData; // Cast the data to the expected type
+                   setCommentData(data);
                   console.log("Fetched comment data:", data);
 
                   // Fetch classroom data
@@ -170,13 +197,25 @@ const commentDocRef = doc(firestore, "comments", commentIdString);
 
     const getPosts = async () => {
         try {
+          try {
             const postsCollectionRef = collection(firestore, 'comments');
-            const q = query(postsCollectionRef, where("id", "==", commentData.postId));
-            //const q = query(postsCollectionRef);
+            
+            if (commentData) {
+              const q = query(postsCollectionRef, where("id", "==", commentData.postId));
+              // Rest of your code...
+            } else {
+              console.error('commentData is null');
+            }
+          } catch (error) {
+            // Handle error...
+          }
+          const postsCollectionRef = collection(firestore, 'comments');
+const q = query(postsCollectionRef, where("id", "==", commentData?.postId));
+
 
 
             const querySnapshot = await getDocs(q);
-            const posts = querySnapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as Post) }));
+            const posts = querySnapshot.docs.map(doc => ({  ...(doc.data() as Post) }));
             console.log("comments", posts);
             return posts;
         } catch (error) {

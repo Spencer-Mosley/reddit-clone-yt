@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import {Comment } from "../../atoms/commentAtom";
+//import {Comment } from "../../atoms/commentAtom";
 import { getDocs, collection, query, limit, startAfter, updateDoc, doc, where, getDoc } from "firebase/firestore";
 import { firestore, auth } from "../../firebase/devclientApp";
 import { Flex, Box, Heading, Text, Table, Thead, Tbody, Tr, Th, Td, Button, Input } from '@chakra-ui/react';
@@ -19,6 +19,32 @@ type CommentsPageProps = {
 type User = {
   email: string;
   // other properties...
+};
+
+type Comment = {
+  id: string;
+  name: string;
+  classMemberNames: string[];
+  joincode: string;
+  tenantId: string;
+  title: string;
+  userEmailAddress: string[];
+  users: string[];
+  userTokens: string[];
+  createdBy: string;
+  dateAdded: string;
+  commentText: string; 
+  postId: string;
+  classroomName: string;
+  senderEmail: string;
+  isActive: boolean;
+
+};
+
+type TenantAdminData = {
+  id: string;
+  tenants: string[]; // Add this line
+  // ...other fields that match the structure of your Firestore document
 };
 
 
@@ -43,8 +69,8 @@ const CommentsPage: React.FC<CommentsPageProps> =  ({ filterCondition }) => {
   
 
 
-  const [tenant, setTenant] =  useState([]);
-  const [user] = useAuthState(auth);
+  const [tenant, setTenant] = useState<string>('');
+    const [user] = useAuthState(auth);
   //getDoc
 
 
@@ -66,11 +92,12 @@ const CommentsPage: React.FC<CommentsPageProps> =  ({ filterCondition }) => {
       const docSnapshot = await getDoc(tenantAdminRef);
   
       if (docSnapshot.exists()) {
-        const tenantAdminData = { id: docSnapshot.id, ...docSnapshot.data() };
+        const data = docSnapshot.data() as { tenants: string[] }; // Add this line
+        const tenantAdminData: TenantAdminData  = { id: docSnapshot.id, ...data };
         console.log('Tenant Admin data:', tenantAdminData);
         console.log('Tenant ID:', tenant);
         setTenant(tenantAdminData.tenants[0]);
-        return tenantAdminData.tenants[0];
+        return tenantAdminData.tenants[0]
       } else {
         console.log('No matching tenant admin document found');
         return null;
@@ -113,7 +140,7 @@ const CommentsPage: React.FC<CommentsPageProps> =  ({ filterCondition }) => {
 
 
 
-  const fetchComments = async (tenantId) => {
+  const fetchComments = async (tenantId: string) => {
     setLoading(true);
     try {
 
@@ -137,8 +164,7 @@ const CommentsPage: React.FC<CommentsPageProps> =  ({ filterCondition }) => {
       */
   
       const querySnapshot = await getDocs(q); // Use the query 'q' here
-      const fetchedComments = querySnapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as Comment) }));
-      setComments(fetchedComments);
+      const fetchedComments = querySnapshot.docs.map(doc => ({ ...(doc.data() as Comment), id: doc.id }));      setComments(fetchedComments);
       setFilteredComments(fetchedComments); // Initialize filteredComments with all comments
     } catch (error) {
       console.error("Error fetching comments:", error);
@@ -161,7 +187,7 @@ const CommentsPage: React.FC<CommentsPageProps> =  ({ filterCondition }) => {
         try {
             const commentRef = doc(firestore, "comments", commentId);
             await updateDoc(commentRef, { isActive: !isActive });
-            fetchComments(currentPage); // Refresh the comments list
+            fetchComments(currentPage.toString()); // Refresh the comments list
         } catch (error) {
             console.error("Error updating comment:", error);
         }
