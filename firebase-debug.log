@@ -1,0 +1,41 @@
+[debug] [2024-03-22T02:37:39.968Z] ----------------------------------------------------------------------
+[debug] [2024-03-22T02:37:39.969Z] Command:       /Users/pgk/.nvm/versions/node/v18.18.2/bin/node /Users/pgk/.nvm/versions/node/v18.18.2/bin/firebase deploy
+[debug] [2024-03-22T02:37:39.969Z] CLI Version:   13.5.2
+[debug] [2024-03-22T02:37:39.970Z] Platform:      darwin
+[debug] [2024-03-22T02:37:39.970Z] Node Version:  v18.18.2
+[debug] [2024-03-22T02:37:39.973Z] Time:          Thu Mar 21 2024 21:37:39 GMT-0500 (Central Daylight Time)
+[debug] [2024-03-22T02:37:39.973Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2024-03-22T02:37:40.006Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2024-03-22T02:37:40.006Z] > authorizing via signed-in user (cs.sdm2487@gmail.com)
+[debug] [2024-03-22T02:37:40.006Z] [iam] checking project herd-communication-app for permissions ["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get","firebasehosting.sites.update"]
+[debug] [2024-03-22T02:37:40.007Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/herd-communication-app:testIamPermissions [none]
+[debug] [2024-03-22T02:37:40.007Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/herd-communication-app:testIamPermissions x-goog-quota-user=projects/herd-communication-app
+[debug] [2024-03-22T02:37:40.008Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/herd-communication-app:testIamPermissions {"permissions":["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get","firebasehosting.sites.update"]}
+[debug] [2024-03-22T02:37:40.319Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/herd-communication-app:testIamPermissions 200
+[debug] [2024-03-22T02:37:40.319Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/herd-communication-app:testIamPermissions {"permissions":["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get","firebasehosting.sites.update"]}
+[debug] [2024-03-22T02:37:40.320Z] >>> [apiv2][query] POST https://iam.googleapis.com/v1/projects/herd-communication-app/serviceAccounts/herd-communication-app@appspot.gserviceaccount.com:testIamPermissions [none]
+[debug] [2024-03-22T02:37:40.320Z] >>> [apiv2][body] POST https://iam.googleapis.com/v1/projects/herd-communication-app/serviceAccounts/herd-communication-app@appspot.gserviceaccount.com:testIamPermissions {"permissions":["iam.serviceAccounts.actAs"]}
+[debug] [2024-03-22T02:37:40.580Z] <<< [apiv2][status] POST https://iam.googleapis.com/v1/projects/herd-communication-app/serviceAccounts/herd-communication-app@appspot.gserviceaccount.com:testIamPermissions 404
+[debug] [2024-03-22T02:37:40.580Z] <<< [apiv2][body] POST https://iam.googleapis.com/v1/projects/herd-communication-app/serviceAccounts/herd-communication-app@appspot.gserviceaccount.com:testIamPermissions {"error":{"code":404,"message":"Unknown service account","status":"NOT_FOUND"}}
+[debug] [2024-03-22T02:37:40.582Z] [functions] service account IAM check errored, deploy may fail: HTTP Error: 404, Unknown service account {"name":"FirebaseError","children":[],"context":{"body":{"error":{"code":404,"message":"Unknown service account","status":"NOT_FOUND"}},"response":{"statusCode":404}},"exit":1,"message":"HTTP Error: 404, Unknown service account","status":404}
+[debug] [2024-03-22T02:37:40.583Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/herd-communication-app [none]
+[debug] [2024-03-22T02:37:40.845Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/herd-communication-app 200
+[debug] [2024-03-22T02:37:40.845Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/herd-communication-app {"projectId":"herd-communication-app","projectNumber":"1007897496067","displayName":"Herd ","name":"projects/herd-communication-app","resources":{"hostingSite":"herd-communication-app"},"state":"ACTIVE","etag":"1_62679019-f598-482b-99ea-b2b2d44f8b3e"}
+[info] 
+[info] === Deploying to 'herd-communication-app'...
+[info] 
+[info] i  deploying functions, hosting 
+[debug] [2024-03-22T02:37:40.978Z] TypeError [ERR_INVALID_ARG_TYPE]: The "path" argument must be of type string. Received undefined
+    at new NodeError (node:internal/errors:405:5)
+    at validateString (node:internal/validators:162:11)
+    at Object.join (node:path:1171:7)
+    at Config.path (/Users/pgk/.nvm/versions/node/v18.18.2/lib/node_modules/firebase-tools/lib/config.js:125:45)
+    at getChildEnvironment (/Users/pgk/.nvm/versions/node/v18.18.2/lib/node_modules/firebase-tools/lib/deploy/lifecycleHooks.js:56:49)
+    at runTargetCommands (/Users/pgk/.nvm/versions/node/v18.18.2/lib/node_modules/firebase-tools/lib/deploy/lifecycleHooks.js:77:14)
+    at /Users/pgk/.nvm/versions/node/v18.18.2/lib/node_modules/firebase-tools/lib/deploy/lifecycleHooks.js:151:24
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async chain (/Users/pgk/.nvm/versions/node/v18.18.2/lib/node_modules/firebase-tools/lib/deploy/index.js:38:9)
+    at async deploy (/Users/pgk/.nvm/versions/node/v18.18.2/lib/node_modules/firebase-tools/lib/deploy/index.js:94:5)
+[error] 
+[error] Error: An unexpected error has occurred.
