@@ -89,7 +89,11 @@ function ClassroomComponent() {
     let uids, tokens, names;
     try {
       // Get user data
+      console.log("trying to get user data")
+
       const { uidList, userTokenList, userNamesList } = await getUserData(userEmails);
+      console.log(" got user data")
+
       uids = uidList;
       tokens = userTokenList;
       names = userNamesList;
@@ -114,13 +118,21 @@ function ClassroomComponent() {
       const docRef = await addDoc(classroomsColRef, classroomData);
 
       // Step 2: Retrieve the auto-generated ID and update the document
+      console.log("trying to update doc")
+
       const docId = docRef.id;
       await updateDoc(docRef, { id: docId });
+      console.log("finished update doc")
+
 
       // Step 3: Create a mapping object
+      console.log("trying to create mapping object")
+
       const mappingRef = doc(firestore, 'classmappings', jc.toString());
       const mappingObject = { classroomID: docId };
       await setDoc(mappingRef, mappingObject);
+      console.log("finsihed set doc of classmappings")
+
 
       console.log("Classroom added with ID:", docId);
       return { name: classroomName, code: jc };
