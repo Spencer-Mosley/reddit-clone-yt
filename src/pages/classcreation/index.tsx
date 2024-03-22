@@ -148,7 +148,7 @@ function ClassroomComponent() {
   // Handle change in the input field
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const value = event.target.value;
-    // Rest of your change handling logic
+    setClassroomName(value); // Update the classroomName state with the new input value
 };
 
 
