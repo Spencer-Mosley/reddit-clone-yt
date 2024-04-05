@@ -8,8 +8,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env: # Define environment variables for the entire job here, using secrets
-      FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY }}
-      #ANOTHER_SECRET: ${{ secrets.ANOTHER_SECRET }}
+      FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
     steps:
     - uses: actions/checkout@v2
     - name: Use Node.js 18
