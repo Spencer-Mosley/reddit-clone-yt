@@ -3,6 +3,8 @@ import { GetServerSideProps, GetServerSidePropsContext } from "next";
 import {getDoc, doc, collection, getDocs, query, where} from "firebase/firestore";
 import {firestore} from "../../../firebase/devclientApp";
 //import { Classroom } from "../../../atoms/classroomAtom";
+import { useRouter } from 'next/router';
+
 import safeJsonStringify from "safe-json-stringify";
 import {
     Box, Spinner, Heading, Text, Flex, Table, Thead, Tbody, Tr, Th, Td, Button
@@ -106,7 +108,7 @@ type FilterCondition = {
 
 
 //const ClassroomPage: React.FC<ClassroomPageProps> = ( {classroomData, match, history }) => {
-    const ClassroomPage: React.FC<ClassroomPageProps> = ( {classroomData }) => {
+    const ClassroomPage: React.FC<ClassroomPageProps> = ( ) => {
 
 
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -117,6 +119,12 @@ const [modalConfirmationText, setModalConfirmationText] = useState('');
 const [allPosts, setAllPosts] = useState<Post[]>([]);
 const [isLoading, setIsLoading] = useState(false);
 const [isDataLoading, setIsDataLoading] = useState(false);
+
+const [classroomData, setClassroomData] = useState<Classroom | null>(null);
+
+
+
+
 // ... other states
 const [userInfo, setUserInfo] = useState<UserInfo>({ 
     tenantId: '',
@@ -132,31 +140,78 @@ const [userInfo, setUserInfo] = useState<UserInfo>({
 
 
 
-useEffect(() => {
-    console.log("use effect");
-    const id = classroomData.createdBy;
-    console.log("classroomData", classroomData);
-    //replace with cladssroom id but ill hard code it for now
+  const router = useRouter();
+  const classroomId = router.query.classroom
 
-    if (id) {
-      //getUser(classroomData.createdBy);
-    } else {
-      //history.push('/admin/classes');
+  useEffect(() => {
+    // This checks if the router is fully ready and ensures `classroomId` is defined
+    if (router.isReady) {
+      const classroomId = router.query.classroomId as string; // Assuming it's a string
+
+      if (classroomId) {
+        console.log("classroomId from router", classroomId);
+      } else {
+        console.log("classroomId is not available yet.");
+      }
     }
+  }, [router.isReady, router.query.classroomId]);
+
+
+
+
+
+  useEffect(() => {
+
+    console.log("trying to get classroom data");
+    console.log("Router status:", router.isReady);
+
+    if (!router.isReady) return;  // Only proceed once the router is ready
+
+    console.log("Trying to get classroom data", "Classroom ID:", router.query.classroomId);
+
+      const fetchData = async () => {
+              console.log("getting here?");
+              console.log("classroomId", classroomId);
+              try {
+                  setIsDataLoading(true);
+                  if (typeof classroomId === 'string') {
+                    const docRef = doc(firestore, 'classrooms', classroomId);
+                    const docSnap = await getDoc(docRef);
+                    if (docSnap.exists()) {
+                      setClassroomData({ ...docSnap.data() as Classroom });
+                  } else {
+                      console.log("No such classroom!");
+                  }
+
+                    // ... rest of your code ...
+                  } else {
+                    console.error('classroomId is not a string:', classroomId);
+                  }
+                  
+              } catch (error) {
+                  console.error("Error fetching classroom data:", error);
+              } finally {
+                  setIsDataLoading(false);
+              }
+      };
+      fetchData();
+  }, []);
+
+
   
-    // Cleanup function
-    return () => {
-      // Unsubscribe or cleanup logic
-    };
-  //}, [match.params.id, history]);
-}, []);
+  
+
 
 
 useEffect(() => {
     // Replace this with your actual data fetching logic
     console.log("use effect 2");
     const fetchPosts = async () => {
+      console.log("use effect 2");
+
       const fetchedPosts = await getPosts(); // Assume getPosts() fetches your data
+      console.log("use effect 2");
+
       setAllPosts(fetchedPosts);
     };
   
@@ -164,11 +219,32 @@ useEffect(() => {
   }, []);
 
 
+  useEffect(() => {
+    console.log(classroomData);
+    if (classroomData && classroomData.tenantId) { // Check if classroomData and tenantId are not undefined
+      const fetchPosts = async () => {
+        const fetchedPosts = await getPosts();
+        setAllPosts(fetchedPosts);
+      };
+      fetchPosts();
+    } else {
+      console.error("Classroom data is not available");
+    }
+  }, [classroomData]); // Adding classroomData as a dependency
+  
+
+
 
   
   const getPosts = async () => {
-    try {
 
+
+    try {
+      if (!classroomData) {
+        console.error('No classroom ID provided');
+        throw new Error('Classroom ID is required');
+        // or simply return; to exit the function without an error
+      }
       if (!classroomData.tenantId) {
         console.error('No tenantId provided');
         throw new Error('Tenant ID is required');
@@ -353,67 +429,7 @@ const getUser = async (id: string) => {
 
   };
 
-  /*
-export async function getServerSideProps(context: GetServerSidePropsContext) {
-    try {
-        const classroomDocRef = doc(firestore, "classrooms", context.query.classroom as string);
-        const classroomDocSnap = await getDoc(classroomDocRef);
-
-        //print this context.query.classroom
-        console.log("context.query.classroom", context.query.classroom);
-
-        //log the classroomDocSnap
-        //console.log("classroomDocSnap", safeJsonStringify(classroomDocSnap));
-        //print the classroomDocSnap id
-        console.log("classroomDocSnap.id", classroomDocSnap.id);
-
-        //print the classroomDocSnap data title field
-        const classroomData2 = classroomDocSnap.data();
-
-        if (classroomData2) {
-          console.log("classroomDocSnap.data().title", classroomData2.title);
-          console.log("classroomDocSnap.data(). created by ", classroomData2.createdBy
-          );
-
-
-        } else {
-          console.log("classroomDocSnap.data() is undefined");
-        }
-        if (!classroomDocSnap.exists()) {
-            // Handle the case where the document does not exist
-            return {
-                props: {}
-            }
-        }
-
-        const classroomData = classroomDocSnap.data();
-
-        if (!classroomData) {
-            // Handle the case where the document data is undefined
-            return {
-                props: {}
-            }
-        }
-
-        return {
-            props: {
-                classroomData: {
-                    ...classroomData,
-                    id: classroomDocSnap.id // Add the document id to the data
-                }
-            }
-        }
-    } catch (error) {
-        console.log("error server side props", error);
-        return {
-            props: {}
-
-        }
-    }
-    
-}
-
-*/
+ 
 
 
 export default ClassroomPage;

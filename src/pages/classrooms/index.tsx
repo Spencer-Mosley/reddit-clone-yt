@@ -58,13 +58,17 @@ const ClassroomsPage: React.FC<ClassroomsPageProps> = () => {
 //import { firestore,auth } from "../../firebase/devclientApp";
 
 
+
   const fetchTenantAdminList = async () => {
+    console.log('trying to fetch admins');
+
     try {
       // Get the currently logged-in user  
       if (!user) {
         console.log('No user logged in');
         return;
       }
+
 
       console.log('User:', user.uid);
   
@@ -88,11 +92,20 @@ const ClassroomsPage: React.FC<ClassroomsPageProps> = () => {
 
 
   useEffect(() => {
+    console.log(userData);
     if (userData.tenants.length > 0) {
       // Use the first tenant ID or loop through all if necessary
+      console.log('tanants length > 0');
       const tenantId = userData.tenants[0];
       fetchClassrooms(tenantId);
     }
+    else {
+      console.log('No tenants found');
+      fetchTenantAdminList();
+
+    }
+    console.log('useEffect');
+
   }, [userData]);
   
 

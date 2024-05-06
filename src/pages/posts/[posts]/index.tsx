@@ -74,7 +74,8 @@ const PostPage: React.FC<PostPageProps> = () => {
     const [filteredComments, setFilteredComments] = useState<Post[]>([]);
     const [user] = useAuthState(auth);
     const router = useRouter();
-    const [postData, setPostData] = useState<Post | null>(null);    const postId = router.query.posts;
+    const [postData, setPostData] = useState<Post | null>(null);    
+    const postId = router.query.posts;
     console.log("router", router.query);
 
     //

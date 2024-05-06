@@ -68,17 +68,18 @@ const UserList: React.FC<UserListProps> = ({ filterCondition }) => {
         }
     
         console.log('User:', user.uid);
+
     
         // Get the document from TenantAdmins collection with the ID of the logged-in user
         const tenantAdminRef = doc(firestore, "tenantAdmins", user.uid);
         const docSnapshot = await getDoc(tenantAdminRef);
+
     
         if (docSnapshot.exists()) {
           const data = docSnapshot.data() as TenantAdminData;
           if (data) {
             const tenantAdminData = {  ...data };
             console.log('Tenant Admin data:', tenantAdminData);
-            console.log('Tenant ID:', tenant);
             setTenant(tenantAdminData.tenants[0]);
           } else {
             console.log('No matching tenant admin document found');
@@ -97,6 +98,8 @@ const UserList: React.FC<UserListProps> = ({ filterCondition }) => {
         throw new Error('Tenant ID is required');
         // or simply return; to exit the function without an error
       }
+
+      console.log("tenantId", tenantId);
   
       const usersCollectionRef = collection(firestore, 'users');
       let q = query(usersCollectionRef, where('tenantId', '==', tenantId));
@@ -109,6 +112,7 @@ const UserList: React.FC<UserListProps> = ({ filterCondition }) => {
       console.log("q", q);
   
       const querySnapshot = await getDocs(q);
+      console.log("querySnapshot");
       const fetchedUsers = querySnapshot.docs.map(doc => ({ ...(doc.data() as User) }));
       setAllUsers(fetchedUsers);
       setFilteredUsers(fetchedUsers);
